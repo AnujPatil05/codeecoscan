@@ -1,7 +1,7 @@
 # CodeEcoScan — Energy & Carbon Analysis for Python Code
 
 ![Python](https://img.shields.io/badge/python-3.11+-blue)
-![Tests](https://img.shields.io/badge/tests-116%20passing-brightgreen)
+![CI](https://github.com/AnujPatil05/codeecoscan/actions/workflows/ci.yml/badge.svg)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
 **Static energy-risk analysis for Python code.**
