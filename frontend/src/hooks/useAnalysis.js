@@ -9,16 +9,24 @@ export default function useAnalysis() {
     const [error, setError] = useState(null)
     const [scoreHistory, setHistory] = useState([])
     const debounceRef = useRef(null)
-    const controllerRef = useRef(null)   // AbortController for in-flight request
+    const controllerRef = useRef(null)
+    const cacheRef = useRef({})    // code → result cache
 
     const analyze = useCallback(async (code) => {
         if (!code.trim()) return
 
-        // Cancel previous debounce timer
         if (debounceRef.current) clearTimeout(debounceRef.current)
 
         debounceRef.current = setTimeout(async () => {
-            // Cancel any in-flight request
+            // ── Cache hit ──────────────────────────────────────
+            if (cacheRef.current[code]) {
+                setResult(cacheRef.current[code])
+                setError(null)
+                setLoading(false)
+                return
+            }
+
+            // ── Cancel any in-flight request ───────────────────
             if (controllerRef.current) controllerRef.current.abort()
             controllerRef.current = new AbortController()
 
@@ -42,12 +50,12 @@ export default function useAnalysis() {
                     setResult(null)
                 } else {
                     const data = await res.json()
+                    cacheRef.current[code] = data          // store in cache
                     setResult(data)
-                    // Append to score history (keep last 20)
                     setHistory(h => [...h.slice(-19), data.risk_assessment.energy_risk_score])
                 }
             } catch (err) {
-                if (err.name === 'AbortError') return   // silently ignore cancelled requests
+                if (err.name === 'AbortError') return
                 setError('Cannot reach API. Is it deployed?')
                 setResult(null)
             } finally {
