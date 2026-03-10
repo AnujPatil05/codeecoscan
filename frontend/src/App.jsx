@@ -3,6 +3,7 @@ import Header from './components/Header.jsx'
 import Editor from './components/Editor.jsx'
 import EnergyGauge from './components/EnergyGauge.jsx'
 import Breakdown from './components/Breakdown.jsx'
+import Sparkline from './components/Sparkline.jsx'
 import EmissionsPanel from './components/EmissionsPanel.jsx'
 import StatusBar from './components/StatusBar.jsx'
 import useAnalysis from './hooks/useAnalysis.js'
@@ -21,10 +22,15 @@ def train(data):
 
 export default function App() {
     const [code, setCode] = useState(STARTER_CODE)
-    const { result, loading, error, analyze } = useAnalysis()
+    const { result, loading, error, analyze, scoreHistory } = useAnalysis()
 
     const assessment = result?.risk_assessment
     const features = result?.extracted_features
+
+    const handleChange = (val) => {
+        setCode(val)
+        analyze(val)
+    }
 
     return (
         <div className="app">
@@ -34,26 +40,29 @@ export default function App() {
                 {/* ── Left: Editor ── */}
                 <section className="editor-pane">
                     <div className="pane-label">
-                        input.py
+                        INPUT.PY
                         <div className="pane-label__status">
                             <span
                                 className={`status-dot ${loading ? 'active' : error ? 'error' : result ? 'active' : ''}`}
                             />
-                            {loading ? 'scanning…' : error ? 'error' : result ? 'ready' : 'idle'}
+                            {loading ? 'ANALYZING CODE…' : error ? 'ERROR' : result ? 'READY' : 'IDLE'}
                         </div>
                     </div>
 
                     <div className="editor-wrapper">
-                        <Editor value={code} onChange={setCode} />
+                        <Editor value={code} onChange={handleChange} />
                     </div>
 
-                    <button
-                        className="scan-btn"
-                        onClick={() => analyze(code)}
-                        disabled={loading || !code.trim()}
-                    >
-                        {loading ? '◌  scanning' : '⬡  scan code'}
-                    </button>
+                    <div className="editor-footer">
+                        <button
+                            className="scan-btn"
+                            onClick={() => analyze(code)}
+                            disabled={loading || !code.trim()}
+                        >
+                            {loading ? '◌  ANALYZING…' : '⬡  SCAN CODE'}
+                        </button>
+                        {scoreHistory.length >= 2 && <Sparkline history={scoreHistory} />}
+                    </div>
 
                     {error && <div className="error-msg">⚠ {error}</div>}
                 </section>
@@ -69,7 +78,7 @@ export default function App() {
                         <div className="empty-state">
                             <div className="empty-state__icon">◈</div>
                             <div className="empty-state__text">
-                                Paste Python code and hit scan
+                                {loading ? 'SCANNING…' : 'Paste Python code and scan'}
                             </div>
                         </div>
                     )}

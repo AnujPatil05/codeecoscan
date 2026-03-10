@@ -20,7 +20,7 @@ export default function Breakdown({ assessment }) {
                     <div
                         className="breakdown-row"
                         key={key}
-                        style={{ animationDelay: `${idx * 60}ms` }}
+                        style={{ animationDelay: `${idx * 70}ms` }}
                     >
                         <div className="breakdown-name">{label}</div>
                         <div className="breakdown-bar-wrap">
