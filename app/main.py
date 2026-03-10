@@ -7,6 +7,7 @@ routers, and installs global exception handlers.
 from __future__ import annotations
 
 from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from app.api.routes import router as analysis_router
@@ -22,6 +23,17 @@ app = FastAPI(
         "Static analysis service that inspects Python code using the AST "
         "module to extract structural patterns related to energy risk."
     ),
+)
+
+# ---------------------------------------------------------------
+# CORS — allow all origins so browser frontends can access the API
+# ---------------------------------------------------------------
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["GET", "POST"],
+    allow_headers=["Content-Type"],
 )
 
 # ---------------------------------------------------------------
