@@ -3,6 +3,7 @@
 ![Python](https://img.shields.io/badge/python-3.11+-blue)
 ![CI](https://github.com/AnujPatil05/codeecoscan/actions/workflows/ci.yml/badge.svg)
 ![License](https://img.shields.io/badge/license-MIT-green)
+[![Live API](https://img.shields.io/badge/API-live%20demo-brightgreen)](https://codeecoscan.onrender.com/docs)
 
 **Static energy-risk analysis for Python code.**
 
@@ -126,15 +127,17 @@ If installed with `pip install -e .`, use `codeecoscan` instead of `python -m ap
 
 ## API Usage
 
+> **Live API:** [codeecoscan.onrender.com/docs](https://codeecoscan.onrender.com/docs) (Swagger UI)
+
 ```bash
-# Start the server
+# Or run locally
 uvicorn app.main:app --reload --port 8000
 ```
 
 ### Analyze code
 
 ```bash
-curl -X POST http://localhost:8000/analyze \
+curl -X POST https://codeecoscan.onrender.com/analyze \
   -H "Content-Type: application/json" \
   -d '{"code": "for i in range(10):\n    for j in range(10):\n        print(i, j)"}'
 ```
