@@ -1,35 +1,60 @@
-export default function LensHeader() {
+export default function LensHeader({ score, refactorScore, delta, co2Saved, file, live }) {
+    const scoreNum = score ?? 0
+    const refactorNum = refactorScore ?? 0
+    const deltaVal = delta != null ? `Δ ${delta > 0 ? '+' : ''}${delta}%` : '—'
+    const scoreCls = scoreNum >= 70 ? 'red' : scoreNum >= 40 ? 'yellow' : 'green'
+    const refactorCls = refactorNum < 40 ? 'green' : refactorNum < 70 ? 'yellow' : 'red'
+    const isEmpty = score == null
+
     return (
         <div className="lens-header">
             <div className="lens-metric">
                 <div className="lm-label">FILE</div>
-                <div className="lm-val" style={{ color: 'var(--text)', fontSize: 13 }}>train.py</div>
+                <div className="lm-val" style={{ color: 'var(--text)', fontSize: 13 }}>{file || '—'}</div>
             </div>
             <div className="lens-sep" />
             <div className="lens-metric">
-                <div className="lm-label">ORIGINAL SCORE</div>
-                <div className="lm-val red">92</div>
+                <div className="lm-label">ENERGY RISK SCORE</div>
+                <div className={`lm-val ${isEmpty ? '' : scoreCls}`}>{isEmpty ? '—' : `${scoreNum} / 100`}</div>
             </div>
             <div className="lens-sep" />
             <div className="lens-metric">
-                <div className="lm-label">REFACTOR SCORE</div>
-                <div className="lm-val green">23</div>
+                <div className="lm-label">RISK LEVEL</div>
+                <div className={`lm-val ${scoreCls}`}>{live?.risk_level || (isEmpty ? '—' : 'UNKNOWN')}</div>
             </div>
             <div className="lens-sep" />
-            <div className="delta-hud">
-                <div>
-                    <div className="delta-label">ENERGY DELTA</div>
-                    <div className="delta-val">Δ -75%</div>
+            {delta != null && (
+                <>
+                    <div className="delta-hud">
+                        <div>
+                            <div className="delta-label">ENERGY DELTA</div>
+                            <div className="delta-val">{deltaVal}</div>
+                        </div>
+                    </div>
+                    <div className="lens-sep" />
+                </>
+            )}
+            <div className="lens-metric">
+                <div className="lm-label">ISSUES FOUND</div>
+                <div className="lm-val" style={{ color: 'var(--warning)', textShadow: 'var(--glow-warning)' }}>
+                    {live?.issues?.length ?? '—'}
                 </div>
             </div>
-            <div className="lens-sep" />
-            <div className="lens-metric">
-                <div className="lm-label">CO₂ SAVED</div>
-                <div className="lm-val green">0.031 kg/day</div>
-            </div>
             <div className="lens-actions">
-                <button className="btn-small">EXPORT DIFF</button>
-                <button className="btn-small primary">APPLY REFACTOR</button>
+                <button
+                    className="btn-small"
+                    onClick={() => {
+                        if (!live) return
+                        const blob = new Blob([JSON.stringify(live, null, 2)], { type: 'application/json' })
+                        const url = URL.createObjectURL(blob)
+                        const a = document.createElement('a')
+                        a.href = url; a.download = 'analysis.json'; a.click()
+                        URL.revokeObjectURL(url)
+                    }}
+                    disabled={!live}
+                >
+                    EXPORT JSON
+                </button>
             </div>
         </div>
     )

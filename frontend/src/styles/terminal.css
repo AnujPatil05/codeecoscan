@@ -1445,7 +1445,7 @@ body::before {
     font-family: var(--font-heading);
 }
 
-/* Crosshair cursor on interactive elements */
+/* cursor: pointer on interactive elements */
 a,
 button,
 .nav-tab,
@@ -1455,7 +1455,7 @@ button,
 .fn-item,
 .btn-small,
 .cmd-scan-btn {
-    cursor: crosshair;
+    cursor: pointer;
 }
 
 /* ═══ MODAL ═══ */
