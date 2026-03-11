@@ -13,6 +13,7 @@ from fastapi.responses import JSONResponse
 from app.api.routes import router as analysis_router
 from app.core.config import get_settings
 from app.core.exceptions import AnalysisError, CodeParsingError
+from app.db.database import init_db
 
 settings = get_settings()
 
@@ -24,6 +25,13 @@ app = FastAPI(
         "module to extract structural patterns related to energy risk."
     ),
 )
+
+
+@app.on_event("startup")
+async def startup_event() -> None:
+    """Initialize the database on startup."""
+    init_db()
+
 
 # ---------------------------------------------------------------
 # CORS — allow all origins so browser frontends can access the API

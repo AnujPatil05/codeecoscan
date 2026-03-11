@@ -1,18 +1,17 @@
 import { useState, useCallback } from 'react'
-import { profileCode } from '../api/client.js'
+import { fetchAnalysisHistory } from '../api/client.js'
 
-/** Hook for AST-based execution cost profiling. */
-export default function useProfiling() {
+/** Hook for fetching analysis history from the database. */
+export default function useHistory() {
     const [data, setData] = useState(null)
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState(null)
 
-    const profile = useCallback(async (code) => {
-        if (!code?.trim()) return
+    const fetchHistory = useCallback(async (limit = 50) => {
         setLoading(true)
         setError(null)
         try {
-            const result = await profileCode(code)
+            const result = await fetchAnalysisHistory(limit)
             setData(result)
         } catch (err) {
             setError(err.message)
@@ -21,5 +20,5 @@ export default function useProfiling() {
         }
     }, [])
 
-    return { data, loading, error, profile }
+    return { data, loading, error, fetchHistory }
 }
