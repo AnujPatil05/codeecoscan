@@ -1,32 +1,18 @@
-export default function StatusBar({ result, features, loading }) {
+import { useLiveTime } from '../hooks/useClock.js'
+
+export default function StatusBar() {
+    const time = useLiveTime()
+
     return (
-        <footer className="status-bar">
-            <div className="status-bar__item">
-                API <span>codeecoscan.onrender.com</span>
+        <div id="statusbar">
+            <div className="sb-item active">REPO <span>CODELOG-BACKEND</span></div>
+            <div className="sb-item">BRANCH <span>main</span></div>
+            <div className="sb-item">LOOP DEPTH <span>3</span></div>
+            <div className="sb-item">RECURSION <span>NO</span></div>
+            <div className="sb-item">HEAVY IMPORTS <span>2</span></div>
+            <div className="sb-item sb-right">
+                <span>{time}</span>
             </div>
-            {features && (
-                <>
-                    <div className="status-bar__item">
-                        Loop depth <span>{features.max_loop_depth}</span>
-                    </div>
-                    <div className="status-bar__item">
-                        Recursion <span>{features.has_recursion ? 'yes' : 'no'}</span>
-                    </div>
-                    <div className="status-bar__item">
-                        Heavy imports <span>{features.heavy_imports_detected.length}</span>
-                    </div>
-                </>
-            )}
-            {loading && (
-                <div className="status-bar__item" style={{ marginLeft: 'auto' }}>
-                    <span>scanning…</span>
-                </div>
-            )}
-            {!loading && !result && (
-                <div className="status-bar__item" style={{ marginLeft: 'auto' }}>
-                    <span style={{ color: 'var(--dim)' }}>awaiting input</span>
-                </div>
-            )}
-        </footer>
+        </div>
     )
 }

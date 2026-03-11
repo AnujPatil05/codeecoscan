@@ -1,95 +1,65 @@
-import { useState } from 'react'
-import Header from './components/Header.jsx'
-import Editor from './components/Editor.jsx'
-import EnergyGauge from './components/EnergyGauge.jsx'
-import Breakdown from './components/Breakdown.jsx'
-import Sparkline from './components/Sparkline.jsx'
-import EmissionsPanel from './components/EmissionsPanel.jsx'
+import { useState, useEffect, useCallback } from 'react'
+import Nav from './components/Nav.jsx'
 import StatusBar from './components/StatusBar.jsx'
-import useAnalysis from './hooks/useAnalysis.js'
+import Modal from './components/Modal.jsx'
+import Tooltip from './components/Tooltip.jsx'
+import CommandCenter from './components/command/CommandCenter.jsx'
+import LensWorkspace from './components/lens/LensWorkspace.jsx'
+import ThermalHeatmap from './components/thermal/ThermalHeatmap.jsx'
+import EmissionMatrix from './components/matrix/EmissionMatrix.jsx'
 
-const STARTER_CODE = `import torch
-import pandas as pd
-
-def train(data):
-    results = []
-    for batch in data:
-        for sample in batch:
-            processed = abs(sample)
-            results.append(processed)
-    return results
-`
+const SCREENS = ['command', 'lens', 'thermal', 'matrix']
 
 export default function App() {
-    const [code, setCode] = useState(STARTER_CODE)
-    const { result, loading, error, analyze, scoreHistory } = useAnalysis()
+    const [screen, setScreen] = useState('command')
+    const [modalOpen, setModalOpen] = useState(false)
 
-    const assessment = result?.risk_assessment
-    const features = result?.extracted_features
+    const openDiff = useCallback(() => setModalOpen(true), [])
+    const closeDiff = useCallback(() => setModalOpen(false), [])
 
-    const handleChange = (val) => {
-        setCode(val)
-        analyze(val)
-    }
+    const switchScreen = useCallback((id) => {
+        setScreen(id)
+    }, [])
+
+    // Keyboard shortcuts: CTRL+1–4 switch screens, ESC closes modal
+    useEffect(() => {
+        const handler = (e) => {
+            if (e.ctrlKey && e.key >= '1' && e.key <= '4') {
+                e.preventDefault()
+                switchScreen(SCREENS[parseInt(e.key) - 1])
+            }
+            if (e.key === 'Escape') closeDiff()
+        }
+        window.addEventListener('keydown', handler)
+        return () => window.removeEventListener('keydown', handler)
+    }, [switchScreen, closeDiff])
 
     return (
-        <div className="app">
-            <Header />
+        <>
+            <Nav activeScreen={screen} onSwitch={switchScreen} />
 
-            <main className="workspace">
-                {/* ── Left: Editor ── */}
-                <section className="editor-pane">
-                    <div className="pane-label">
-                        INPUT.PY
-                        <div className="pane-label__status">
-                            <span
-                                className={`status-dot ${loading ? 'active' : error ? 'error' : result ? 'active' : ''}`}
-                            />
-                            {loading ? 'ANALYZING CODE…' : error ? 'ERROR' : result ? 'READY' : 'IDLE'}
-                        </div>
-                    </div>
+            <div id="screen-command" className={`screen${screen === 'command' ? ' active' : ''}`}>
+                <CommandCenter
+                    onOpenDiff={openDiff}
+                    onInitiateLens={() => switchScreen('lens')}
+                />
+            </div>
 
-                    <div className="editor-wrapper">
-                        <Editor value={code} onChange={handleChange} />
-                    </div>
+            <div id="screen-lens" className={`screen${screen === 'lens' ? ' active' : ''}`}>
+                {screen === 'lens' && <LensWorkspace />}
+            </div>
 
-                    <div className="editor-footer">
-                        <button
-                            className="scan-btn"
-                            onClick={() => analyze(code)}
-                            disabled={loading || !code.trim()}
-                        >
-                            {loading ? '◌  ANALYZING…' : '⬡  SCAN CODE'}
-                        </button>
-                        {scoreHistory.length >= 2 && <Sparkline history={scoreHistory} />}
-                    </div>
+            <div id="screen-thermal" className={`screen${screen === 'thermal' ? ' active' : ''}`}>
+                {screen === 'thermal' && <ThermalHeatmap />}
+            </div>
 
-                    {error && <div className="error-msg">⚠ {error}</div>}
-                </section>
+            <div id="screen-matrix" className={`screen${screen === 'matrix' ? ' active' : ''}`}>
+                {screen === 'matrix' && <EmissionMatrix onOpenDiff={openDiff} />}
+            </div>
 
-                {/* ── Right: Diagnostics ── */}
-                <section className="diagnostics-pane">
-                    {assessment ? (
-                        <>
-                            <EnergyGauge assessment={assessment} />
-                            <Breakdown assessment={assessment} />
-                        </>
-                    ) : (
-                        <div className="empty-state">
-                            <div className="empty-state__icon">◈</div>
-                            <div className="empty-state__text">
-                                {loading ? 'SCANNING…' : 'Paste Python code and scan'}
-                            </div>
-                        </div>
-                    )}
-                </section>
-            </main>
-
-            {/* ── Bottom: Emissions ── */}
-            <EmissionsPanel assessment={assessment} />
-
-            {/* ── Status bar ── */}
-            <StatusBar result={result} features={features} loading={loading} />
-        </div>
+            <StatusBar />
+            <Modal isOpen={modalOpen} onClose={closeDiff} />
+            <Tooltip />
+        </>
     )
 }

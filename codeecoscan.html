@@ -1,0 +1,2137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CODEECOSCAN // CARBON TERMINAL</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --primary: #00FF41;
+  --bg: #050505;
+  --surface: #121212;
+  --surface2: #1a1a1a;
+  --text: #E0E0E0;
+  --muted: #4A4A4A;
+  --warning: #FFB000;
+  --danger: #FF003C;
+  --glow-primary: 0 0 8px rgba(0,255,65,0.4), 0 0 20px rgba(0,255,65,0.15);
+  --glow-danger: 0 0 8px rgba(255,0,60,0.5), 0 0 24px rgba(255,0,60,0.2);
+  --glow-warning: 0 0 8px rgba(255,176,0,0.4);
+  --font-heading: 'Space Mono', monospace;
+  --font-body: 'JetBrains Mono', monospace;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 14px;
+  height: 100%;
+  overflow: hidden;
+  cursor: crosshair;
+}
+
+/* ═══════════════════════════════════
+   SCROLLBAR
+═══════════════════════════════════ */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--muted); }
+::-webkit-scrollbar-thumb:hover { background: var(--primary); }
+
+/* ═══════════════════════════════════
+   SCAN LINES OVERLAY
+═══════════════════════════════════ */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.08) 2px, rgba(0,0,0,0.08) 4px);
+  pointer-events: none;
+  z-index: 9999;
+}
+
+/* ═══════════════════════════════════
+   GLOBAL NAV
+═══════════════════════════════════ */
+#nav {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: 48px;
+  background: var(--bg);
+  border-bottom: 1px solid var(--muted);
+  display: flex;
+  align-items: center;
+  padding: 0 24px;
+  gap: 0;
+  z-index: 1000;
+  justify-content: space-between;
+}
+
+.nav-logo {
+  font-family: var(--font-heading);
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--primary);
+  text-shadow: var(--glow-primary);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-right: 32px;
+}
+
+.nav-logo span { color: var(--text); text-shadow: none; }
+
+.nav-tabs {
+  display: flex;
+  height: 100%;
+  gap: 0;
+}
+
+.nav-tab {
+  font-family: var(--font-heading);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  padding: 0 20px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  color: var(--muted);
+  border-right: 1px solid var(--muted);
+  transition: all 0.15s;
+  user-select: none;
+  position: relative;
+}
+
+.nav-tab:first-child { border-left: 1px solid var(--muted); }
+
+.nav-tab:hover { color: var(--primary); background: rgba(0,255,65,0.04); }
+
+.nav-tab.active {
+  color: var(--primary);
+  text-shadow: var(--glow-primary);
+  background: rgba(0,255,65,0.06);
+}
+
+.nav-tab.active::after {
+  content: '';
+  position: absolute;
+  bottom: -1px; left: 0; right: 0;
+  height: 2px;
+  background: var(--primary);
+  box-shadow: var(--glow-primary);
+}
+
+.nav-tab .tab-num {
+  font-size: 9px;
+  color: var(--muted);
+  margin-right: 8px;
+}
+
+.nav-tab.active .tab-num { color: var(--primary); }
+
+.nav-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.nav-status {
+  font-size: 11px;
+  color: var(--muted);
+  letter-spacing: 1px;
+}
+
+.nav-status .dot {
+  display: inline-block;
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--primary);
+  box-shadow: var(--glow-primary);
+  margin-right: 6px;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+/* ═══════════════════════════════════
+   SCREENS
+═══════════════════════════════════ */
+.screen {
+  position: fixed;
+  inset: 48px 0 0 0;
+  display: none;
+  overflow: hidden;
+}
+.screen.active { display: flex; }
+
+/* ═══════════════════════════════════
+   SCREEN 1: COMMAND CENTER
+═══════════════════════════════════ */
+#screen-command {
+  flex-direction: row;
+}
+
+/* Left sidebar nav */
+.cmd-sidebar {
+  width: 200px;
+  min-width: 200px;
+  background: var(--surface);
+  border-right: 1px solid var(--muted);
+  display: flex;
+  flex-direction: column;
+  padding: 24px 0;
+}
+
+.cmd-sidebar-label {
+  font-size: 10px;
+  color: var(--muted);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  padding: 0 16px 12px;
+  border-bottom: 1px solid var(--muted);
+  margin-bottom: 12px;
+}
+
+.cmd-sidebar-item {
+  font-family: var(--font-heading);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  padding: 10px 16px;
+  color: var(--muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: all 0.15s;
+  border-left: 2px solid transparent;
+}
+
+.cmd-sidebar-item:hover { color: var(--text); background: rgba(255,255,255,0.02); }
+
+.cmd-sidebar-item.active {
+  color: var(--primary);
+  text-shadow: var(--glow-primary);
+  border-left-color: var(--primary);
+  background: rgba(0,255,65,0.04);
+}
+
+.cmd-sidebar-item .si-icon { font-size: 10px; }
+
+.cmd-sidebar-bottom {
+  margin-top: auto;
+  padding: 16px;
+  border-top: 1px solid var(--muted);
+}
+
+.sys-metric {
+  font-size: 10px;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+
+.sys-metric-val { color: var(--primary); text-shadow: var(--glow-primary); }
+
+/* Center main */
+.cmd-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.cmd-main-top {
+  border-bottom: 1px solid var(--muted);
+  padding: 20px 28px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.cmd-label {
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: var(--muted);
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.carbon-clock-wrap {
+  text-align: center;
+}
+
+.carbon-clock {
+  font-family: var(--font-heading);
+  font-size: 72px;
+  font-weight: 700;
+  color: var(--danger);
+  text-shadow: var(--glow-danger);
+  letter-spacing: -2px;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.carbon-clock-unit {
+  font-size: 12px;
+  color: var(--danger);
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  margin-top: 6px;
+  opacity: 0.8;
+}
+
+.cmd-alert-box {
+  background: rgba(255,0,60,0.06);
+  border: 1px solid rgba(255,0,60,0.3);
+  padding: 16px 20px;
+  min-width: 280px;
+}
+
+.alert-header {
+  font-family: var(--font-heading);
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: var(--danger);
+  text-shadow: var(--glow-danger);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.alert-blink {
+  display: inline-block;
+  width: 6px; height: 6px;
+  background: var(--danger);
+  animation: blink 1s step-end infinite;
+}
+
+@keyframes blink { 0%,100%{opacity:1;} 50%{opacity:0;} }
+
+.alert-item {
+  font-size: 11px;
+  color: var(--text);
+  padding: 6px 0;
+  border-bottom: 1px solid rgba(255,0,60,0.1);
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.alert-item:last-child { border-bottom: none; }
+.alert-tag { color: var(--danger); font-size: 10px; }
+.alert-tag.warn { color: var(--warning); }
+
+.cmd-scan-btn {
+  font-family: var(--font-heading);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  padding: 14px 32px;
+  background: transparent;
+  border: 1px solid var(--primary);
+  color: var(--primary);
+  text-shadow: var(--glow-primary);
+  box-shadow: var(--glow-primary);
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.cmd-scan-btn:hover {
+  background: var(--primary);
+  color: var(--bg);
+  text-shadow: none;
+}
+
+.cmd-scan-btn .btn-icon { font-size: 16px; }
+
+/* Stats row */
+.cmd-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  border-bottom: 1px solid var(--muted);
+}
+
+.stat-cell {
+  padding: 16px 24px;
+  border-right: 1px solid var(--muted);
+}
+
+.stat-cell:last-child { border-right: none; }
+
+.stat-label {
+  font-size: 10px;
+  color: var(--muted);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+
+.stat-val {
+  font-family: var(--font-heading);
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--primary);
+  text-shadow: var(--glow-primary);
+}
+
+.stat-val.warn { color: var(--warning); text-shadow: var(--glow-warning); }
+.stat-val.danger { color: var(--danger); text-shadow: var(--glow-danger); }
+
+.stat-sub { font-size: 10px; color: var(--muted); margin-top: 2px; }
+
+/* Activity log */
+.cmd-log-area {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0;
+}
+
+.log-header {
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: var(--muted);
+  text-transform: uppercase;
+  padding: 12px 24px;
+  border-bottom: 1px solid var(--muted);
+  background: var(--surface);
+  position: sticky;
+  top: 0;
+}
+
+.log-entry {
+  display: grid;
+  grid-template-columns: 80px 100px 1fr 80px 90px;
+  gap: 0;
+  padding: 10px 24px;
+  border-bottom: 1px solid rgba(74,74,74,0.4);
+  font-size: 11px;
+  transition: background 0.1s;
+  cursor: pointer;
+  align-items: center;
+}
+
+.log-entry:hover { background: rgba(255,255,255,0.02); }
+
+.log-ts { color: var(--muted); }
+.log-sha { color: var(--warning); font-size: 10px; }
+.log-msg { color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.log-author { color: var(--muted); font-size: 10px; }
+
+.log-delta { text-align: right; font-family: var(--font-heading); font-size: 12px; }
+.log-delta.up { color: var(--danger); }
+.log-delta.down { color: var(--primary); text-shadow: var(--glow-primary); }
+
+/* Right panel */
+.cmd-right {
+  width: 280px;
+  min-width: 280px;
+  border-left: 1px solid var(--muted);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.panel-header {
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: var(--muted);
+  text-transform: uppercase;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--muted);
+  background: var(--surface);
+}
+
+.top-files {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0;
+}
+
+.file-item {
+  padding: 12px 16px;
+  border-bottom: 1px solid rgba(74,74,74,0.3);
+  cursor: pointer;
+  transition: all 0.1s;
+}
+
+.file-item:hover { background: rgba(255,255,255,0.02); }
+
+.file-name { font-size: 12px; color: var(--text); margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.file-bar-wrap {
+  height: 3px;
+  background: var(--muted);
+  margin: 6px 0 4px;
+}
+
+.file-bar {
+  height: 100%;
+  transition: width 0.5s;
+}
+
+.file-meta { display: flex; justify-content: space-between; font-size: 10px; color: var(--muted); }
+.file-score { font-family: var(--font-heading); }
+
+.mini-chart {
+  padding: 16px;
+  border-top: 1px solid var(--muted);
+}
+
+.mini-chart-label {
+  font-size: 10px;
+  color: var(--muted);
+  letter-spacing: 1px;
+  margin-bottom: 12px;
+  text-transform: uppercase;
+}
+
+.sparkline { width: 100%; height: 60px; }
+
+/* ═══════════════════════════════════
+   SCREEN 2: LENS WORKSPACE
+═══════════════════════════════════ */
+#screen-lens {
+  flex-direction: column;
+}
+
+.lens-header {
+  display: flex;
+  align-items: center;
+  padding: 0 24px;
+  height: 48px;
+  border-bottom: 1px solid var(--muted);
+  background: var(--surface);
+  gap: 24px;
+  flex-shrink: 0;
+}
+
+.lens-metric {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.lm-label { font-size: 9px; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; }
+
+.lm-val {
+  font-family: var(--font-heading);
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.lm-val.green { color: var(--primary); text-shadow: var(--glow-primary); }
+.lm-val.red { color: var(--danger); text-shadow: var(--glow-danger); }
+.lm-val.yellow { color: var(--warning); }
+
+.lens-sep { width: 1px; height: 32px; background: var(--muted); }
+
+.delta-hud {
+  background: rgba(0,255,65,0.08);
+  border: 1px solid rgba(0,255,65,0.4);
+  padding: 6px 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  box-shadow: var(--glow-primary);
+}
+
+.delta-val {
+  font-family: var(--font-heading);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--primary);
+  text-shadow: var(--glow-primary);
+}
+
+.delta-label { font-size: 10px; color: var(--primary); letter-spacing: 1px; opacity: 0.7; }
+
+.lens-actions { margin-left: auto; display: flex; gap: 8px; }
+
+.btn-small {
+  font-family: var(--font-heading);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  padding: 6px 14px;
+  background: transparent;
+  border: 1px solid var(--muted);
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.btn-small:hover { border-color: var(--primary); color: var(--primary); }
+.btn-small.primary { border-color: var(--primary); color: var(--primary); box-shadow: var(--glow-primary); }
+.btn-small.primary:hover { background: var(--primary); color: var(--bg); }
+
+.lens-body {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+.lens-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+}
+
+.lens-panel + .lens-panel { border-left: 2px solid var(--muted); }
+
+.lens-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 16px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--muted);
+  flex-shrink: 0;
+}
+
+.lph-title {
+  font-family: var(--font-heading);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+.lph-title.danger { color: var(--danger); text-shadow: var(--glow-danger); }
+.lph-title.success { color: var(--primary); text-shadow: var(--glow-primary); }
+
+.lph-score {
+  font-family: var(--font-heading);
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.lph-score.danger { color: var(--danger); text-shadow: var(--glow-danger); }
+.lph-score.success { color: var(--primary); text-shadow: var(--glow-primary); }
+
+.code-editor {
+  flex: 1;
+  overflow: auto;
+  position: relative;
+  background: var(--bg);
+}
+
+.code-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.code-table td { padding: 0; vertical-align: top; }
+
+.line-num {
+  width: 48px;
+  min-width: 48px;
+  text-align: right;
+  padding: 0 12px 0 8px;
+  color: var(--muted);
+  font-size: 11px;
+  user-select: none;
+  background: var(--surface);
+  border-right: 1px solid var(--muted);
+  white-space: nowrap;
+}
+
+.line-code {
+  padding: 0 16px;
+  white-space: pre;
+  color: var(--text);
+}
+
+/* Heat intensities */
+.heat-0 { background: transparent; }
+.heat-1 { background: rgba(255,176,0,0.08); }
+.heat-2 { background: rgba(255,176,0,0.18); }
+.heat-3 { background: rgba(255,0,60,0.15); }
+.heat-4 { background: rgba(255,0,60,0.28); }
+.heat-5 { background: rgba(255,0,60,0.42); }
+
+.heat-dot {
+  display: inline-block;
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  margin-right: 6px;
+  flex-shrink: 0;
+  vertical-align: middle;
+}
+
+.fix-1 { background: rgba(0,255,65,0.1); }
+.fix-2 { background: rgba(0,255,65,0.2); }
+
+/* Syntax */
+.kw { color: #7ec8e3; }
+.fn { color: #FFD700; }
+.st { color: #ce9178; }
+.cm { color: #6A9955; font-style: italic; }
+.nm { color: var(--primary); }
+.op { color: var(--muted); }
+.bi { color: #dcdcaa; }
+
+/* Score breakdown sidebar */
+.lens-breakdown {
+  width: 240px;
+  min-width: 240px;
+  border-left: 1px solid var(--muted);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.breakdown-list { flex: 1; overflow-y: auto; padding: 0; }
+
+.breakdown-item {
+  padding: 14px 16px;
+  border-bottom: 1px solid rgba(74,74,74,0.4);
+}
+
+.bi-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+.bi-name { font-size: 11px; color: var(--text); }
+.bi-score { font-family: var(--font-heading); font-size: 14px; font-weight: 700; }
+.bi-score.danger { color: var(--danger); }
+.bi-score.warn { color: var(--warning); }
+.bi-score.ok { color: var(--primary); text-shadow: var(--glow-primary); }
+
+.bi-bar-wrap { height: 3px; background: var(--muted); margin-bottom: 6px; }
+.bi-bar { height: 100%; transition: width 1s; }
+.bi-desc { font-size: 10px; color: var(--muted); line-height: 1.5; }
+
+/* ═══════════════════════════════════
+   SCREEN 3: THERMAL HEATMAP
+═══════════════════════════════════ */
+#screen-thermal {
+  flex-direction: column;
+}
+
+.thermal-header {
+  display: flex;
+  align-items: center;
+  padding: 0 24px;
+  height: 48px;
+  border-bottom: 1px solid var(--muted);
+  background: var(--surface);
+  gap: 20px;
+  flex-shrink: 0;
+}
+
+.thermal-title {
+  font-family: var(--font-heading);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--warning);
+  text-shadow: var(--glow-warning);
+}
+
+.thermal-file { font-size: 11px; color: var(--muted); }
+
+.heat-legend {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.hl-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.hl-swatch {
+  width: 16px; height: 10px;
+}
+
+.thermal-body {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+.thermal-code-area {
+  flex: 1;
+  overflow: auto;
+  background: var(--bg);
+}
+
+.thermal-code-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  line-height: 2;
+}
+
+.thermal-code-table td { padding: 0; vertical-align: middle; }
+
+.thermal-gutter {
+  width: 60px;
+  min-width: 60px;
+  text-align: right;
+  padding: 0 8px;
+  font-size: 10px;
+  user-select: none;
+  background: var(--surface);
+  border-right: 1px solid var(--muted);
+}
+
+.gutter-time { color: var(--danger); }
+.gutter-time.med { color: var(--warning); }
+.gutter-time.low { color: var(--muted); }
+
+.thermal-line { padding: 0 16px; white-space: pre; color: var(--text); }
+
+/* Thermal sidebar */
+.thermal-sidebar {
+  width: 260px;
+  min-width: 260px;
+  border-left: 1px solid var(--muted);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.fn-list { flex: 1; overflow-y: auto; }
+
+.fn-item {
+  padding: 14px 16px;
+  border-bottom: 1px solid rgba(74,74,74,0.3);
+  cursor: pointer;
+  transition: all 0.1s;
+}
+
+.fn-item:hover { background: rgba(255,255,255,0.02); }
+.fn-item.active { background: rgba(255,176,0,0.06); border-left: 2px solid var(--warning); }
+
+.fn-name { font-size: 12px; color: var(--text); margin-bottom: 4px; font-family: var(--font-heading); }
+.fn-meta { display: flex; justify-content: space-between; font-size: 10px; color: var(--muted); margin-bottom: 6px; }
+.fn-cost { color: var(--danger); }
+
+.fn-bar-wrap { height: 3px; background: var(--muted); }
+.fn-bar { height: 100%; }
+
+.heat-profile {
+  padding: 16px;
+  border-top: 1px solid var(--muted);
+}
+
+.hp-title {
+  font-size: 10px;
+  letter-spacing: 1px;
+  color: var(--muted);
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+
+.hp-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.hp-cell {
+  background: var(--surface);
+  border: 1px solid var(--muted);
+  padding: 10px;
+}
+
+.hp-cell-label { font-size: 9px; color: var(--muted); letter-spacing: 1px; margin-bottom: 4px; text-transform: uppercase; }
+.hp-cell-val { font-family: var(--font-heading); font-size: 16px; font-weight: 700; color: var(--warning); text-shadow: var(--glow-warning); }
+
+/* ═══════════════════════════════════
+   SCREEN 4: EMISSION MATRIX
+═══════════════════════════════════ */
+#screen-matrix {
+  flex-direction: column;
+}
+
+.matrix-header {
+  display: flex;
+  align-items: center;
+  padding: 0 24px;
+  height: 48px;
+  border-bottom: 1px solid var(--muted);
+  background: var(--surface);
+  gap: 24px;
+  flex-shrink: 0;
+}
+
+.matrix-title {
+  font-family: var(--font-heading);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--primary);
+  text-shadow: var(--glow-primary);
+}
+
+.matrix-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.ms-label { font-size: 9px; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; }
+.ms-val { font-family: var(--font-heading); font-size: 15px; font-weight: 700; }
+.ms-val.green { color: var(--primary); text-shadow: var(--glow-primary); }
+.ms-val.red { color: var(--danger); text-shadow: var(--glow-danger); }
+.ms-sep { width: 1px; height: 28px; background: var(--muted); }
+
+.matrix-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.chart-area {
+  height: 45%;
+  border-bottom: 1px solid var(--muted);
+  position: relative;
+  overflow: hidden;
+  padding: 16px 24px 0;
+}
+
+.chart-y-label {
+  position: absolute;
+  left: 8px;
+  top: 50%;
+  transform: rotate(-90deg) translateX(-50%);
+  font-size: 10px;
+  color: var(--muted);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  white-space: nowrap;
+  transform-origin: left center;
+}
+
+.chart-svg-wrap {
+  width: 100%;
+  height: 100%;
+  margin-left: 24px;
+}
+
+/* Table */
+.table-area { flex: 1; overflow-y: auto; }
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.data-table th {
+  background: var(--surface);
+  font-family: var(--font-heading);
+  font-size: 10px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--text);
+  padding: 10px 16px;
+  border-bottom: 2px solid var(--text);
+  text-align: left;
+  position: sticky;
+  top: 0;
+}
+
+.data-table td {
+  padding: 10px 16px;
+  font-size: 11px;
+  border-bottom: 1px solid rgba(74,74,74,0.3);
+  color: var(--text);
+}
+
+.data-table tr:hover td { background: rgba(255,255,255,0.02); cursor: pointer; }
+
+.td-sha { color: var(--warning); font-size: 10px; }
+.td-author { color: var(--muted); }
+.td-delta { font-family: var(--font-heading); font-size: 12px; }
+.td-delta.up { color: var(--danger); }
+.td-delta.down { color: var(--primary); text-shadow: var(--glow-primary); }
+.td-ts { color: var(--muted); font-size: 10px; }
+.td-risk { font-size: 10px; padding: 2px 8px; letter-spacing: 1px; font-family: var(--font-heading); }
+.td-risk.high { border: 1px solid var(--danger); color: var(--danger); }
+.td-risk.med { border: 1px solid var(--warning); color: var(--warning); }
+.td-risk.low { border: 1px solid var(--primary); color: var(--primary); }
+
+/* ═══════════════════════════════════
+   ANIMATIONS
+═══════════════════════════════════ */
+@keyframes crt-flicker {
+  0% { opacity: 1; }
+  2% { opacity: 0.8; }
+  4% { opacity: 1; }
+  6% { opacity: 0.9; }
+  8% { opacity: 1; }
+}
+
+.flicker { animation: crt-flicker 0.3s; }
+
+@keyframes scanin {
+  from { transform: translateY(-8px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.screen.active { animation: scanin 0.2s ease-out; }
+
+@keyframes countup { from { transform: scale(1.05); } to { transform: scale(1); } }
+
+/* ═══════════════════════════════════
+   TOOLTIP
+═══════════════════════════════════ */
+.tooltip {
+  position: fixed;
+  background: var(--surface);
+  border: 1px solid var(--muted);
+  padding: 8px 12px;
+  font-size: 11px;
+  color: var(--text);
+  pointer-events: none;
+  z-index: 5000;
+  display: none;
+  max-width: 260px;
+}
+
+.tooltip .tip-head { color: var(--warning); font-size: 10px; letter-spacing: 1px; margin-bottom: 4px; font-family: var(--font-heading); }
+
+/* Crosshair cursor on interactive elements */
+a, button, .nav-tab, .cmd-sidebar-item, .log-entry, .file-item, .fn-item, .btn-small, .cmd-scan-btn { cursor: crosshair; }
+
+/* ═══════════════════════════════════
+   MODAL
+═══════════════════════════════════ */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.8);
+  z-index: 8000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-overlay.open { display: flex; }
+
+.modal-box {
+  background: var(--surface);
+  border: 1px solid var(--muted);
+  padding: 24px;
+  width: 520px;
+  max-height: 70vh;
+  overflow-y: auto;
+  position: relative;
+}
+
+.modal-header {
+  font-family: var(--font-heading);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--warning);
+  margin-bottom: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-close {
+  background: none;
+  border: 1px solid var(--muted);
+  color: var(--muted);
+  font-family: var(--font-heading);
+  font-size: 11px;
+  padding: 4px 10px;
+  cursor: crosshair;
+  transition: all 0.15s;
+}
+
+.modal-close:hover { border-color: var(--danger); color: var(--danger); }
+
+.diff-line {
+  font-size: 11px;
+  padding: 2px 8px;
+  white-space: pre;
+  font-family: var(--font-body);
+}
+
+.diff-line.add { background: rgba(0,255,65,0.08); color: var(--primary); }
+.diff-line.rem { background: rgba(255,0,60,0.08); color: var(--danger); }
+.diff-line.ctx { color: var(--muted); }
+
+/* ═══════════════════════════════════
+   STATUS BAR
+═══════════════════════════════════ */
+#statusbar {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  height: 24px;
+  background: var(--surface);
+  border-top: 1px solid var(--muted);
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  gap: 24px;
+  z-index: 1000;
+}
+
+.sb-item {
+  font-size: 10px;
+  color: var(--muted);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.sb-item span { color: var(--text); }
+.sb-item.active span { color: var(--primary); text-shadow: var(--glow-primary); }
+
+.sb-right { margin-left: auto; }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav id="nav">
+  <div class="nav-logo">CODE<span>ECO</span>SCAN</div>
+  <div class="nav-tabs">
+    <div class="nav-tab active" onclick="switchScreen('command', this)">
+      <span class="tab-num">01</span> COMMAND CENTER
+    </div>
+    <div class="nav-tab" onclick="switchScreen('lens', this)">
+      <span class="tab-num">02</span> LENS WORKSPACE
+    </div>
+    <div class="nav-tab" onclick="switchScreen('thermal', this)">
+      <span class="tab-num">03</span> THERMAL HEATMAP
+    </div>
+    <div class="nav-tab" onclick="switchScreen('matrix', this)">
+      <span class="tab-num">04</span> EMISSION MATRIX
+    </div>
+  </div>
+  <div class="nav-right">
+    <div class="nav-status"><span class="dot"></span>CONNECTED</div>
+  </div>
+</nav>
+
+<!-- ════════════════════════════════════
+     SCREEN 01: COMMAND CENTER
+════════════════════════════════════ -->
+<div id="screen-command" class="screen active">
+
+  <!-- Left sidebar -->
+  <div class="cmd-sidebar">
+    <div class="cmd-sidebar-label">REPOSITORIES</div>
+    <div class="cmd-sidebar-item active"><span class="si-icon">▶</span> codelog-backend</div>
+    <div class="cmd-sidebar-item"><span class="si-icon">○</span> devconnect-api</div>
+    <div class="cmd-sidebar-item"><span class="si-icon">○</span> fintrace-core</div>
+    <div class="cmd-sidebar-item"><span class="si-icon">○</span> ml-pipeline</div>
+    <div class="cmd-sidebar-item"><span class="si-icon">○</span> data-preprocessor</div>
+
+    <div style="margin-top: 24px; padding: 0 16px 12px; font-size: 10px; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; border-top: 1px solid var(--muted); padding-top: 16px;">SYSTEM</div>
+    <div class="cmd-sidebar-item"><span class="si-icon">◇</span> SETTINGS</div>
+    <div class="cmd-sidebar-item"><span class="si-icon">◇</span> EXPORT REPORT</div>
+
+    <div class="cmd-sidebar-bottom">
+      <div class="sys-metric">CPU <span class="sys-metric-val">12%</span></div>
+      <div class="sys-metric">MEM <span class="sys-metric-val">1.2GB</span></div>
+      <div class="sys-metric">API <span class="sys-metric-val" style="color: var(--primary)">LIVE</span></div>
+    </div>
+  </div>
+
+  <!-- Center main -->
+  <div class="cmd-main">
+
+    <div class="cmd-main-top">
+      <!-- Carbon clock -->
+      <div class="carbon-clock-wrap">
+        <div class="cmd-label">TOTAL CARBON DEBT — REPO: CODELOG-BACKEND</div>
+        <div class="carbon-clock" id="clockDisplay">004.892</div>
+        <div class="carbon-clock-unit">kgCO₂ / YEAR — TICKING</div>
+        <button class="cmd-scan-btn" onclick="initiateLens()" style="margin-top: 20px;">
+          <span class="btn-icon">⊕</span> INITIATE LENS
+        </button>
+      </div>
+
+      <!-- Alert box -->
+      <div class="cmd-alert-box">
+        <div class="alert-header">
+          <div class="alert-blink"></div>
+          ACTIVE CRITICAL ALERTS — 4
+        </div>
+        <div class="alert-item">
+          <span>train.py: O(N³) LOOP</span>
+          <span class="alert-tag">CRITICAL</span>
+        </div>
+        <div class="alert-item">
+          <span>model.py: FULL TENSOR COPY</span>
+          <span class="alert-tag">CRITICAL</span>
+        </div>
+        <div class="alert-item">
+          <span>pipeline.py: BLOCKING I/O</span>
+          <span class="alert-tag warn">HIGH</span>
+        </div>
+        <div class="alert-item">
+          <span>utils.py: REDUNDANT RECOMPUTE</span>
+          <span class="alert-tag warn">HIGH</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stats row -->
+    <div class="cmd-stats">
+      <div class="stat-cell">
+        <div class="stat-label">ENERGY RISK SCORE</div>
+        <div class="stat-val danger">67</div>
+        <div class="stat-sub">/ 100 — HIGH</div>
+      </div>
+      <div class="stat-cell">
+        <div class="stat-label">FILES SCANNED</div>
+        <div class="stat-val">142</div>
+        <div class="stat-sub">LAST SCAN: 4m AGO</div>
+      </div>
+      <div class="stat-cell">
+        <div class="stat-label">ENERGY / DAY</div>
+        <div class="stat-val warn">48.3</div>
+        <div class="stat-sub">WH / DAY</div>
+      </div>
+      <div class="stat-cell">
+        <div class="stat-label">CO₂ SAVED (MTD)</div>
+        <div class="stat-val" style="color: var(--primary); text-shadow: var(--glow-primary);">0.84</div>
+        <div class="stat-sub">KG — 12 REFACTORS</div>
+      </div>
+    </div>
+
+    <!-- Log area -->
+    <div class="cmd-log-area">
+      <div class="log-header">RECENT COMMIT TELEMETRY — CLICK ROW FOR DIFF</div>
+      <div class="log-entry" onclick="openDiff()">
+        <span class="log-ts">14:32:01</span>
+        <span class="log-sha">a3f2c91</span>
+        <span class="log-msg">feat: add batch processing to training loop</span>
+        <span class="log-author">@anuj</span>
+        <span class="log-delta up">+34%</span>
+      </div>
+      <div class="log-entry">
+        <span class="log-ts">13:11:44</span>
+        <span class="log-sha">b7e1d03</span>
+        <span class="log-msg">refactor: vectorize sample processing with numpy</span>
+        <span class="log-author">@anuj</span>
+        <span class="log-delta down">-22%</span>
+      </div>
+      <div class="log-entry">
+        <span class="log-ts">12:58:20</span>
+        <span class="log-sha">c9a4f77</span>
+        <span class="log-msg">fix: remove duplicate DataFrame copy in pipeline</span>
+        <span class="log-author">@anuj</span>
+        <span class="log-delta down">-11%</span>
+      </div>
+      <div class="log-entry">
+        <span class="log-ts">11:45:03</span>
+        <span class="log-sha">d2b8c12</span>
+        <span class="log-msg">feat: add tensorflow model export functionality</span>
+        <span class="log-author">@anuj</span>
+        <span class="log-delta up">+18%</span>
+      </div>
+      <div class="log-entry">
+        <span class="log-ts">10:20:55</span>
+        <span class="log-sha">e5f3a48</span>
+        <span class="log-msg">chore: update requirements, add torch 2.1</span>
+        <span class="log-author">@anuj</span>
+        <span class="log-delta up">+7%</span>
+      </div>
+      <div class="log-entry">
+        <span class="log-ts">09:04:17</span>
+        <span class="log-sha">f1c6d90</span>
+        <span class="log-msg">refactor: replace nested loop with list comprehension</span>
+        <span class="log-author">@anuj</span>
+        <span class="log-delta down">-41%</span>
+      </div>
+      <div class="log-entry">
+        <span class="log-ts">08:33:02</span>
+        <span class="log-sha">a0e9b34</span>
+        <span class="log-msg">feat: add model caching layer to reduce redundancy</span>
+        <span class="log-author">@anuj</span>
+        <span class="log-delta down">-19%</span>
+      </div>
+      <div class="log-entry">
+        <span class="log-ts">YESTERDAY</span>
+        <span class="log-sha">9d7f201</span>
+        <span class="log-msg">perf: lazy-load heavy imports behind function gate</span>
+        <span class="log-author">@anuj</span>
+        <span class="log-delta down">-28%</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right panel -->
+  <div class="cmd-right">
+    <div class="panel-header">TOP ENERGY OFFENDERS</div>
+    <div class="top-files">
+      <div class="file-item">
+        <div class="file-name">train.py</div>
+        <div class="file-bar-wrap">
+          <div class="file-bar" style="width:92%; background: var(--danger); box-shadow: var(--glow-danger);"></div>
+        </div>
+        <div class="file-meta">
+          <span style="font-size:10px; color: var(--muted)">RISK</span>
+          <span class="file-score" style="color: var(--danger);">92 / 100</span>
+        </div>
+      </div>
+      <div class="file-item">
+        <div class="file-name">model.py</div>
+        <div class="file-bar-wrap">
+          <div class="file-bar" style="width:78%; background: var(--danger);"></div>
+        </div>
+        <div class="file-meta">
+          <span style="font-size:10px; color: var(--muted)">RISK</span>
+          <span class="file-score" style="color: var(--danger);">78 / 100</span>
+        </div>
+      </div>
+      <div class="file-item">
+        <div class="file-name">pipeline.py</div>
+        <div class="file-bar-wrap">
+          <div class="file-bar" style="width:61%; background: var(--warning);"></div>
+        </div>
+        <div class="file-meta">
+          <span style="font-size:10px; color: var(--muted)">RISK</span>
+          <span class="file-score" style="color: var(--warning);">61 / 100</span>
+        </div>
+      </div>
+      <div class="file-item">
+        <div class="file-name">utils.py</div>
+        <div class="file-bar-wrap">
+          <div class="file-bar" style="width:44%; background: var(--warning);"></div>
+        </div>
+        <div class="file-meta">
+          <span style="font-size:10px; color: var(--muted)">RISK</span>
+          <span class="file-score" style="color: var(--warning);">44 / 100</span>
+        </div>
+      </div>
+      <div class="file-item">
+        <div class="file-name">data_loader.py</div>
+        <div class="file-bar-wrap">
+          <div class="file-bar" style="width:29%; background: var(--primary);"></div>
+        </div>
+        <div class="file-meta">
+          <span style="font-size:10px; color: var(--muted)">RISK</span>
+          <span class="file-score" style="color: var(--primary); text-shadow: var(--glow-primary);">29 / 100</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="mini-chart">
+      <div class="mini-chart-label">7-DAY TREND</div>
+      <svg class="sparkline" viewBox="0 0 220 60" preserveAspectRatio="none">
+        <defs>
+          <linearGradient id="spGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#00FF41" stop-opacity="0.3"/>
+            <stop offset="100%" stop-color="#00FF41" stop-opacity="0"/>
+          </linearGradient>
+        </defs>
+        <!-- Grid lines -->
+        <line x1="0" y1="20" x2="220" y2="20" stroke="#4A4A4A" stroke-width="0.5"/>
+        <line x1="0" y1="40" x2="220" y2="40" stroke="#4A4A4A" stroke-width="0.5"/>
+        <!-- Area fill -->
+        <polygon points="0,55 0,45 36,38 72,50 108,30 144,22 180,15 216,18 216,55" fill="url(#spGrad)"/>
+        <!-- Line -->
+        <polyline points="0,45 36,38 72,50 108,30 144,22 180,15 216,18" fill="none" stroke="#00FF41" stroke-width="2" stroke-linejoin="miter" style="filter: drop-shadow(0 0 4px rgba(0,255,65,0.6))"/>
+        <!-- Dots -->
+        <circle cx="216" cy="18" r="3" fill="#00FF41" style="filter: drop-shadow(0 0 4px rgba(0,255,65,0.8))"/>
+      </svg>
+    </div>
+  </div>
+
+</div>
+
+<!-- ════════════════════════════════════
+     SCREEN 02: LENS WORKSPACE
+════════════════════════════════════ -->
+<div id="screen-lens" class="screen">
+
+  <div class="lens-header">
+    <div class="lens-metric">
+      <div class="lm-label">FILE</div>
+      <div class="lm-val" style="color: var(--text); font-size:13px;">train.py</div>
+    </div>
+    <div class="lens-sep"></div>
+    <div class="lens-metric">
+      <div class="lm-label">ORIGINAL SCORE</div>
+      <div class="lm-val red">92</div>
+    </div>
+    <div class="lens-sep"></div>
+    <div class="lens-metric">
+      <div class="lm-label">REFACTOR SCORE</div>
+      <div class="lm-val green">23</div>
+    </div>
+    <div class="lens-sep"></div>
+    <div class="delta-hud">
+      <div>
+        <div class="delta-label">ENERGY DELTA</div>
+        <div class="delta-val">Δ -75%</div>
+      </div>
+    </div>
+    <div class="lens-sep"></div>
+    <div class="lens-metric">
+      <div class="lm-label">CO₂ SAVED</div>
+      <div class="lm-val green">0.031 kg/day</div>
+    </div>
+    <div class="lens-actions">
+      <button class="btn-small">EXPORT DIFF</button>
+      <button class="btn-small primary">APPLY REFACTOR</button>
+    </div>
+  </div>
+
+  <div class="lens-body">
+
+    <!-- Left: Original -->
+    <div class="lens-panel">
+      <div class="lens-panel-header">
+        <div class="lph-title danger">⚠ ORIGINAL — ENERGY RISK: CRITICAL</div>
+        <div class="lph-score danger">92 / 100</div>
+      </div>
+      <div class="code-editor">
+        <table class="code-table">
+          <tr>
+            <td class="line-num">1</td>
+            <td class="line-code heat-3"><span class="kw">import</span> <span class="nm">torch</span></td>
+          </tr>
+          <tr>
+            <td class="line-num">2</td>
+            <td class="line-code heat-3"><span class="kw">import</span> <span class="nm">pandas</span> <span class="kw">as</span> <span class="nm">pd</span></td>
+          </tr>
+          <tr>
+            <td class="line-num">3</td>
+            <td class="line-code heat-0"><span class="kw">import</span> <span class="nm">numpy</span> <span class="kw">as</span> <span class="nm">np</span></td>
+          </tr>
+          <tr>
+            <td class="line-num">4</td>
+            <td class="line-code heat-0"></td>
+          </tr>
+          <tr>
+            <td class="line-num">5</td>
+            <td class="line-code heat-1"><span class="kw">def</span> <span class="fn">train</span>(data):</td>
+          </tr>
+          <tr>
+            <td class="line-num">6</td>
+            <td class="line-code heat-1">    results = []</td>
+          </tr>
+          <tr>
+            <td class="line-num">7</td>
+            <td class="line-code heat-2">    <span class="kw">for</span> batch <span class="kw">in</span> data:   <span class="cm"># O(N)</span></td>
+          </tr>
+          <tr>
+            <td class="line-num">8</td>
+            <td class="line-code heat-4" title="O(N²) detected">        <span class="kw">for</span> sample <span class="kw">in</span> batch:  <span class="cm"># O(N²) ⚠</span></td>
+          </tr>
+          <tr>
+            <td class="line-num">9</td>
+            <td class="line-code heat-5" title="O(N³) critical">            <span class="kw">for</span> elem <span class="kw">in</span> sample:  <span class="cm"># O(N³) !</span></td>
+          </tr>
+          <tr>
+            <td class="line-num">10</td>
+            <td class="line-code heat-5">                processed = <span class="bi">abs</span>(elem)</td>
+          </tr>
+          <tr>
+            <td class="line-num">11</td>
+            <td class="line-code heat-4">                results.<span class="bi">append</span>(processed)</td>
+          </tr>
+          <tr>
+            <td class="line-num">12</td>
+            <td class="line-code heat-0">    <span class="kw">return</span> results</td>
+          </tr>
+          <tr>
+            <td class="line-num">13</td>
+            <td class="line-code heat-0"></td>
+          </tr>
+          <tr>
+            <td class="line-num">14</td>
+            <td class="line-code heat-2"><span class="kw">def</span> <span class="fn">load_data</span>(path):</td>
+          </tr>
+          <tr>
+            <td class="line-num">15</td>
+            <td class="line-code heat-3">    df = <span class="nm">pd</span>.<span class="bi">read_csv</span>(path)</td>
+          </tr>
+          <tr>
+            <td class="line-num">16</td>
+            <td class="line-code heat-4">    df_copy = df.<span class="bi">copy</span>()  <span class="cm"># UNNECESSARY COPY</span></td>
+          </tr>
+          <tr>
+            <td class="line-num">17</td>
+            <td class="line-code heat-3">    <span class="kw">return</span> df_copy.<span class="bi">values</span>.<span class="bi">tolist</span>()</td>
+          </tr>
+        </table>
+      </div>
+    </div>
+
+    <!-- Right: Refactored -->
+    <div class="lens-panel">
+      <div class="lens-panel-header">
+        <div class="lph-title success">✓ REFACTOR — ENERGY RISK: LOW</div>
+        <div class="lph-score success">23 / 100</div>
+      </div>
+      <div class="code-editor">
+        <table class="code-table">
+          <tr>
+            <td class="line-num">1</td>
+            <td class="line-code fix-1"><span class="kw">import</span> <span class="nm">torch</span>  <span class="cm"># lazy-loaded</span></td>
+          </tr>
+          <tr>
+            <td class="line-num">2</td>
+            <td class="line-code fix-1"><span class="kw">import</span> <span class="nm">numpy</span> <span class="kw">as</span> <span class="nm">np</span></td>
+          </tr>
+          <tr>
+            <td class="line-num">3</td>
+            <td class="line-code heat-0"></td>
+          </tr>
+          <tr>
+            <td class="line-num">4</td>
+            <td class="line-code heat-0"></td>
+          </tr>
+          <tr>
+            <td class="line-num">5</td>
+            <td class="line-code fix-2"><span class="kw">def</span> <span class="fn">train</span>(data):</td>
+          </tr>
+          <tr>
+            <td class="line-num">6</td>
+            <td class="line-code fix-2">    <span class="cm"># Vectorized — eliminates O(N³) loop</span></td>
+          </tr>
+          <tr>
+            <td class="line-num">7</td>
+            <td class="line-code fix-2">    arr = <span class="nm">np</span>.<span class="bi">concatenate</span>(</td>
+          </tr>
+          <tr>
+            <td class="line-num">8</td>
+            <td class="line-code fix-2">        [<span class="nm">np</span>.<span class="bi">array</span>(b).<span class="bi">flatten</span>() <span class="kw">for</span> b <span class="kw">in</span> data]</td>
+          </tr>
+          <tr>
+            <td class="line-num">9</td>
+            <td class="line-code fix-2">    )</td>
+          </tr>
+          <tr>
+            <td class="line-num">10</td>
+            <td class="line-code fix-2">    <span class="kw">return</span> <span class="nm">np</span>.<span class="bi">abs</span>(arr).<span class="bi">tolist</span>()</td>
+          </tr>
+          <tr>
+            <td class="line-num">11</td>
+            <td class="line-code heat-0"></td>
+          </tr>
+          <tr>
+            <td class="line-num">12</td>
+            <td class="line-code heat-0"></td>
+          </tr>
+          <tr>
+            <td class="line-num">13</td>
+            <td class="line-code heat-0"></td>
+          </tr>
+          <tr>
+            <td class="line-num">14</td>
+            <td class="line-code fix-1"><span class="kw">def</span> <span class="fn">load_data</span>(path):</td>
+          </tr>
+          <tr>
+            <td class="line-num">15</td>
+            <td class="line-code fix-1">    <span class="cm"># No copy — direct array extraction</span></td>
+          </tr>
+          <tr>
+            <td class="line-num">16</td>
+            <td class="line-code fix-2">    <span class="kw">return</span> <span class="nm">np</span>.<span class="bi">genfromtxt</span>(path, delimiter=<span class="st">','</span>)</td>
+          </tr>
+          <tr>
+            <td class="line-num">17</td>
+            <td class="line-code heat-0"></td>
+          </tr>
+        </table>
+      </div>
+    </div>
+
+    <!-- Breakdown sidebar -->
+    <div class="lens-breakdown">
+      <div class="panel-header">SCORE BREAKDOWN</div>
+      <div class="breakdown-list">
+        <div class="breakdown-item">
+          <div class="bi-top">
+            <div class="bi-name">LOOP DEPTH</div>
+            <div class="bi-score danger">+35 → +0</div>
+          </div>
+          <div class="bi-bar-wrap">
+            <div class="bi-bar" style="width:0%; background: var(--primary); box-shadow: var(--glow-primary);"></div>
+          </div>
+          <div class="bi-desc">O(N³) nested loops eliminated via numpy vectorization. Estimated 200x speedup on large batches.</div>
+        </div>
+        <div class="breakdown-item">
+          <div class="bi-top">
+            <div class="bi-name">HEAVY IMPORTS</div>
+            <div class="bi-score warn">+16 → +8</div>
+          </div>
+          <div class="bi-bar-wrap">
+            <div class="bi-bar" style="width:35%; background: var(--warning);"></div>
+          </div>
+          <div class="bi-desc">pandas removed. torch retained but lazily invoked. numpy kept — necessary for vectorization.</div>
+        </div>
+        <div class="breakdown-item">
+          <div class="bi-top">
+            <div class="bi-name">MEMORY COPIES</div>
+            <div class="bi-score danger">+18 → +0</div>
+          </div>
+          <div class="bi-bar-wrap">
+            <div class="bi-bar" style="width:0%; background: var(--primary); box-shadow: var(--glow-primary);"></div>
+          </div>
+          <div class="bi-desc">DataFrame .copy() call removed. Direct numpy extraction reduces peak memory by ~50%.</div>
+        </div>
+        <div class="breakdown-item">
+          <div class="bi-top">
+            <div class="bi-name">INTERACTION</div>
+            <div class="bi-score ok">+15 → +15</div>
+          </div>
+          <div class="bi-bar-wrap">
+            <div class="bi-bar" style="width:60%; background: var(--warning);"></div>
+          </div>
+          <div class="bi-desc">I/O pattern unchanged. File reads still blocking — consider async I/O for further optimization.</div>
+        </div>
+        <div class="breakdown-item">
+          <div class="bi-top">
+            <div class="bi-name">RECURSION</div>
+            <div class="bi-score ok">+0</div>
+          </div>
+          <div class="bi-bar-wrap">
+            <div class="bi-bar" style="width:0%; background: var(--muted);"></div>
+          </div>
+          <div class="bi-desc">No recursive calls detected in either version.</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<!-- ════════════════════════════════════
+     SCREEN 03: THERMAL HEATMAP
+════════════════════════════════════ -->
+<div id="screen-thermal" class="screen">
+
+  <div class="thermal-header">
+    <div class="thermal-title">THERMAL HEATMAP</div>
+    <div class="thermal-file">▶ train.py — CRITICAL HOTSPOTS: 3</div>
+    <div class="heat-legend">
+      <div class="hl-item">
+        <div class="hl-swatch" style="background: rgba(0,0,0,0); border: 1px solid var(--muted);"></div>
+        EFFICIENT
+      </div>
+      <div class="hl-item">
+        <div class="hl-swatch" style="background: rgba(255,176,0,0.3);"></div>
+        WARNING
+      </div>
+      <div class="hl-item">
+        <div class="hl-swatch" style="background: rgba(255,0,60,0.4);"></div>
+        CRITICAL
+      </div>
+    </div>
+  </div>
+
+  <div class="thermal-body">
+
+    <div class="thermal-code-area">
+      <table class="thermal-code-table">
+        <tr>
+          <td class="thermal-gutter"><span class="gutter-time low">0.1ms</span></td>
+          <td class="thermal-line heat-0"><span class="kw">import</span> torch</td>
+        </tr>
+        <tr>
+          <td class="thermal-gutter"><span class="gutter-time low">0.2ms</span></td>
+          <td class="thermal-line heat-1"><span class="kw">import</span> pandas <span class="kw">as</span> pd</td>
+        </tr>
+        <tr>
+          <td class="thermal-gutter"><span class="gutter-time low">—</span></td>
+          <td class="thermal-line heat-0"><span class="kw">import</span> numpy <span class="kw">as</span> np</td>
+        </tr>
+        <tr>
+          <td class="thermal-gutter"></td>
+          <td class="thermal-line heat-0"></td>
+        </tr>
+        <tr>
+          <td class="thermal-gutter"><span class="gutter-time low">—</span></td>
+          <td class="thermal-line heat-0"><span class="kw">def</span> <span class="fn">train</span>(data):</td>
+        </tr>
+        <tr>
+          <td class="thermal-gutter"><span class="gutter-time low">0.1ms</span></td>
+          <td class="thermal-line heat-0">    results = []</td>
+        </tr>
+        <tr>
+          <td class="thermal-gutter"><span class="gutter-time med">12ms</span></td>
+          <td class="thermal-line heat-2">    <span class="kw">for</span> batch <span class="kw">in</span> data:</td>
+        </tr>
+        <tr>
+          <td class="thermal-gutter"><span class="gutter-time">148ms</span></td>
+          <td class="thermal-line heat-4">        <span class="kw">for</span> sample <span class="kw">in</span> batch:</td>
+        </tr>
+        <tr>
+          <td class="thermal-gutter"><span class="gutter-time">450ms</span></td>
+          <td class="thermal-line heat-5">            <span class="kw">for</span> elem <span class="kw">in</span> sample:</td>
+        </tr>
+        <tr>
+          <td class="thermal-gutter"><span class="gutter-time">450ms</span></td>
+          <td class="thermal-line heat-5">                processed = <span class="bi">abs</span>(elem)</td>
+        </tr>
+        <tr>
+          <td class="thermal-gutter"><span class="gutter-time">380ms</span></td>
+          <td class="thermal-line heat-4">                results.<span class="bi">append</span>(processed)</td>
+        </tr>
+        <tr>
+          <td class="thermal-gutter"><span class="gutter-time low">0.1ms</span></td>
+          <td class="thermal-line heat-0">    <span class="kw">return</span> results</td>
+        </tr>
+        <tr>
+          <td class="thermal-gutter"></td>
+          <td class="thermal-line heat-0"></td>
+        </tr>
+        <tr>
+          <td class="thermal-gutter"><span class="gutter-time low">—</span></td>
+          <td class="thermal-line heat-0"><span class="kw">def</span> <span class="fn">load_data</span>(path):</td>
+        </tr>
+        <tr>
+          <td class="thermal-gutter"><span class="gutter-time med">32ms</span></td>
+          <td class="thermal-line heat-2">    df = pd.<span class="bi">read_csv</span>(path)</td>
+        </tr>
+        <tr>
+          <td class="thermal-gutter"><span class="gutter-time med">85ms</span></td>
+          <td class="thermal-line heat-3">    df_copy = df.<span class="bi">copy</span>()  <span class="cm"># MEMORY SPIKE</span></td>
+        </tr>
+        <tr>
+          <td class="thermal-gutter"><span class="gutter-time med">28ms</span></td>
+          <td class="thermal-line heat-2">    <span class="kw">return</span> df_copy.<span class="bi">values</span>.<span class="bi">tolist</span>()</td>
+        </tr>
+      </table>
+    </div>
+
+    <div class="thermal-sidebar">
+      <div class="panel-header">FUNCTION ENERGY DRAIN</div>
+      <div class="fn-list">
+        <div class="fn-item active">
+          <div class="fn-name">train()</div>
+          <div class="fn-meta">
+            <span>LINES 5–12</span>
+            <span class="fn-cost">1.42 μWh/call</span>
+          </div>
+          <div class="fn-bar-wrap">
+            <div class="fn-bar" style="width:95%; background: var(--danger); box-shadow: var(--glow-danger);"></div>
+          </div>
+        </div>
+        <div class="fn-item">
+          <div class="fn-name">load_data()</div>
+          <div class="fn-meta">
+            <span>LINES 14–17</span>
+            <span class="fn-cost">0.38 μWh/call</span>
+          </div>
+          <div class="fn-bar-wrap">
+            <div class="fn-bar" style="width:38%; background: var(--warning);"></div>
+          </div>
+        </div>
+        <div class="fn-item">
+          <div class="fn-name">preprocess()</div>
+          <div class="fn-meta">
+            <span>LINES 20–26</span>
+            <span class="fn-cost">0.12 μWh/call</span>
+          </div>
+          <div class="fn-bar-wrap">
+            <div class="fn-bar" style="width:18%; background: var(--primary);"></div>
+          </div>
+        </div>
+        <div class="fn-item">
+          <div class="fn-name">validate()</div>
+          <div class="fn-meta">
+            <span>LINES 28–33</span>
+            <span class="fn-cost">0.04 μWh/call</span>
+          </div>
+          <div class="fn-bar-wrap">
+            <div class="fn-bar" style="width:6%; background: var(--primary);"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="heat-profile">
+        <div class="hp-title">EXECUTION PROFILE</div>
+        <div class="hp-grid">
+          <div class="hp-cell">
+            <div class="hp-cell-label">TOTAL TIME</div>
+            <div class="hp-cell-val">1.44s</div>
+          </div>
+          <div class="hp-cell">
+            <div class="hp-cell-label">PEAK MEM</div>
+            <div class="hp-cell-val" style="font-size:14px;">412 MB</div>
+          </div>
+          <div class="hp-cell">
+            <div class="hp-cell-label">CRITICAL</div>
+            <div class="hp-cell-val">3 LINES</div>
+          </div>
+          <div class="hp-cell">
+            <div class="hp-cell-label">ENERGY</div>
+            <div class="hp-cell-val" style="font-size:13px;">1.80 μWh</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<!-- ════════════════════════════════════
+     SCREEN 04: EMISSION MATRIX
+════════════════════════════════════ -->
+<div id="screen-matrix" class="screen">
+
+  <div class="matrix-header">
+    <div class="matrix-title">EMISSION MATRIX</div>
+    <div class="ms-sep"></div>
+    <div class="matrix-stat">
+      <div class="ms-label">TOTAL CO₂ ELIMINATED</div>
+      <div class="ms-val green">0.84 kg</div>
+    </div>
+    <div class="ms-sep"></div>
+    <div class="matrix-stat">
+      <div class="ms-label">REFACTORS APPLIED</div>
+      <div class="ms-val green">12</div>
+    </div>
+    <div class="ms-sep"></div>
+    <div class="matrix-stat">
+      <div class="ms-label">CURRENT DEBT</div>
+      <div class="ms-val red">4.89 kg/yr</div>
+    </div>
+    <div class="ms-sep"></div>
+    <div class="matrix-stat">
+      <div class="ms-label">TREND</div>
+      <div class="ms-val green">↓ IMPROVING</div>
+    </div>
+    <div style="margin-left: auto;">
+      <button class="btn-small primary">EXPORT CSV</button>
+    </div>
+  </div>
+
+  <div class="matrix-body">
+
+    <!-- Chart area -->
+    <div class="chart-area">
+      <svg width="100%" height="100%" viewBox="0 0 900 200" preserveAspectRatio="xMidYMid meet" style="display:block;">
+        <defs>
+          <linearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#00FF41" stop-opacity="0.15"/>
+            <stop offset="100%" stop-color="#00FF41" stop-opacity="0"/>
+          </linearGradient>
+          <filter id="glow">
+            <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+            <feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+        </defs>
+
+        <!-- Y-axis label -->
+        <text x="8" y="100" fill="#4A4A4A" font-family="JetBrains Mono" font-size="10" transform="rotate(-90, 8, 100)" text-anchor="middle">kgCO₂/yr</text>
+
+        <!-- Grid -->
+        <line x1="40" y1="20" x2="880" y2="20" stroke="#4A4A4A" stroke-width="0.5"/>
+        <line x1="40" y1="60" x2="880" y2="60" stroke="#4A4A4A" stroke-width="0.5"/>
+        <line x1="40" y1="100" x2="880" y2="100" stroke="#4A4A4A" stroke-width="0.5"/>
+        <line x1="40" y1="140" x2="880" y2="140" stroke="#4A4A4A" stroke-width="0.5"/>
+        <line x1="40" y1="180" x2="880" y2="180" stroke="#4A4A4A" stroke-width="0.5"/>
+
+        <!-- Y labels -->
+        <text x="36" y="23" fill="#4A4A4A" font-family="JetBrains Mono" font-size="10" text-anchor="end">8.0</text>
+        <text x="36" y="63" fill="#4A4A4A" font-family="JetBrains Mono" font-size="10" text-anchor="end">6.0</text>
+        <text x="36" y="103" fill="#4A4A4A" font-family="JetBrains Mono" font-size="10" text-anchor="end">4.0</text>
+        <text x="36" y="143" fill="#4A4A4A" font-family="JetBrains Mono" font-size="10" text-anchor="end">2.0</text>
+        <text x="36" y="183" fill="#4A4A4A" font-family="JetBrains Mono" font-size="10" text-anchor="end">0</text>
+
+        <!-- Area fill: starts high, drops as refactors applied -->
+        <polygon points="40,50 160,55 260,80 330,65 430,90 530,105 620,115 700,122 800,128 880,131 880,180 40,180" fill="url(#chartGrad)"/>
+
+        <!-- Chart line (sharp, no curves) -->
+        <polyline
+          points="40,50 160,55 260,80 330,65 430,90 530,105 620,115 700,122 800,128 880,131"
+          fill="none" stroke="#00FF41" stroke-width="2" stroke-linejoin="miter"
+          filter="url(#glow)"/>
+
+        <!-- Danger line: target -->
+        <line x1="40" y1="60" x2="880" y2="60" stroke="#FFB000" stroke-width="1" stroke-dasharray="4,4" opacity="0.5"/>
+        <text x="885" y="63" fill="#FFB000" font-family="JetBrains Mono" font-size="9">TARGET</text>
+
+        <!-- Data points with crosshair on hover -->
+        <circle cx="40" cy="50" r="4" fill="#FF003C" filter="url(#glow)"/>
+        <circle cx="260" cy="80" r="3" fill="#FFB000"/>
+        <circle cx="530" cy="105" r="3" fill="#FFB000"/>
+        <circle cx="880" cy="131" r="4" fill="#00FF41" filter="url(#glow)"/>
+
+        <!-- X labels -->
+        <text x="40" y="196" fill="#4A4A4A" font-family="JetBrains Mono" font-size="9" text-anchor="middle">MAR 4</text>
+        <text x="160" y="196" fill="#4A4A4A" font-family="JetBrains Mono" font-size="9" text-anchor="middle">MAR 5</text>
+        <text x="280" y="196" fill="#4A4A4A" font-family="JetBrains Mono" font-size="9" text-anchor="middle">MAR 6</text>
+        <text x="400" y="196" fill="#4A4A4A" font-family="JetBrains Mono" font-size="9" text-anchor="middle">MAR 7</text>
+        <text x="520" y="196" fill="#4A4A4A" font-family="JetBrains Mono" font-size="9" text-anchor="middle">MAR 8</text>
+        <text x="640" y="196" fill="#4A4A4A" font-family="JetBrains Mono" font-size="9" text-anchor="middle">MAR 9</text>
+        <text x="760" y="196" fill="#4A4A4A" font-family="JetBrains Mono" font-size="9" text-anchor="middle">MAR 10</text>
+        <text x="880" y="196" fill="#00FF41" font-family="JetBrains Mono" font-size="9" text-anchor="middle" style="filter: drop-shadow(0 0 4px rgba(0,255,65,0.6))">MAR 11</text>
+      </svg>
+    </div>
+
+    <!-- Data table -->
+    <div class="table-area">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>SHA</th>
+            <th>FILE</th>
+            <th>MESSAGE</th>
+            <th>AUTHOR</th>
+            <th>Δ_ENERGY</th>
+            <th>CO₂ Δ (kg)</th>
+            <th>RISK</th>
+            <th>TIMESTAMP</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr onclick="openDiff()">
+            <td class="td-sha">a3f2c91</td>
+            <td>train.py</td>
+            <td>feat: add batch processing</td>
+            <td class="td-author">@anuj</td>
+            <td class="td-delta up">+34%</td>
+            <td class="td-delta up">+0.021</td>
+            <td><span class="td-risk high">HIGH</span></td>
+            <td class="td-ts">2026-03-11 14:32</td>
+          </tr>
+          <tr>
+            <td class="td-sha">b7e1d03</td>
+            <td>utils.py</td>
+            <td>refactor: vectorize processing</td>
+            <td class="td-author">@anuj</td>
+            <td class="td-delta down">-22%</td>
+            <td class="td-delta down">-0.014</td>
+            <td><span class="td-risk med">MED</span></td>
+            <td class="td-ts">2026-03-11 13:11</td>
+          </tr>
+          <tr>
+            <td class="td-sha">c9a4f77</td>
+            <td>pipeline.py</td>
+            <td>fix: remove DataFrame copy</td>
+            <td class="td-author">@anuj</td>
+            <td class="td-delta down">-11%</td>
+            <td class="td-delta down">-0.007</td>
+            <td><span class="td-risk low">LOW</span></td>
+            <td class="td-ts">2026-03-11 12:58</td>
+          </tr>
+          <tr>
+            <td class="td-sha">d2b8c12</td>
+            <td>model.py</td>
+            <td>feat: tensorflow export</td>
+            <td class="td-author">@anuj</td>
+            <td class="td-delta up">+18%</td>
+            <td class="td-delta up">+0.011</td>
+            <td><span class="td-risk high">HIGH</span></td>
+            <td class="td-ts">2026-03-11 10:20</td>
+          </tr>
+          <tr>
+            <td class="td-sha">f1c6d90</td>
+            <td>train.py</td>
+            <td>refactor: list comprehension</td>
+            <td class="td-author">@anuj</td>
+            <td class="td-delta down">-41%</td>
+            <td class="td-delta down">-0.026</td>
+            <td><span class="td-risk low">LOW</span></td>
+            <td class="td-ts">2026-03-11 09:04</td>
+          </tr>
+          <tr>
+            <td class="td-sha">a0e9b34</td>
+            <td>model.py</td>
+            <td>feat: model caching layer</td>
+            <td class="td-author">@anuj</td>
+            <td class="td-delta down">-19%</td>
+            <td class="td-delta down">-0.012</td>
+            <td><span class="td-risk low">LOW</span></td>
+            <td class="td-ts">2026-03-11 08:33</td>
+          </tr>
+          <tr>
+            <td class="td-sha">9d7f201</td>
+            <td>pipeline.py</td>
+            <td>perf: lazy-load heavy imports</td>
+            <td class="td-author">@anuj</td>
+            <td class="td-delta down">-28%</td>
+            <td class="td-delta down">-0.018</td>
+            <td><span class="td-risk low">LOW</span></td>
+            <td class="td-ts">2026-03-10 17:44</td>
+          </tr>
+          <tr>
+            <td class="td-sha">8c3e512</td>
+            <td>data_loader.py</td>
+            <td>chore: update requirements</td>
+            <td class="td-author">@anuj</td>
+            <td class="td-delta up">+7%</td>
+            <td class="td-delta up">+0.004</td>
+            <td><span class="td-risk med">MED</span></td>
+            <td class="td-ts">2026-03-10 14:22</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+
+</div>
+
+<!-- STATUS BAR -->
+<div id="statusbar">
+  <div class="sb-item active">REPO <span>CODELOG-BACKEND</span></div>
+  <div class="sb-item">BRANCH <span>main</span></div>
+  <div class="sb-item">LOOP DEPTH <span>3</span></div>
+  <div class="sb-item">RECURSION <span>NO</span></div>
+  <div class="sb-item">HEAVY IMPORTS <span>2</span></div>
+  <div class="sb-item sb-right">
+    <span id="liveTime"></span>
+  </div>
+</div>
+
+<!-- DIFF MODAL -->
+<div class="modal-overlay" id="diffModal" onclick="if(event.target===this)closeModal()">
+  <div class="modal-box">
+    <div class="modal-header">
+      COMMIT DIFF — a3f2c91
+      <button class="modal-close" onclick="closeModal()">[ CLOSE ]</button>
+    </div>
+    <div>
+      <div class="diff-line ctx">--- a/train.py</div>
+      <div class="diff-line ctx">+++ b/train.py</div>
+      <div class="diff-line ctx">@@ -5,8 +5,10 @@</div>
+      <div class="diff-line ctx"> def train(data):</div>
+      <div class="diff-line ctx">     results = []</div>
+      <div class="diff-line rem">-    for batch in data:</div>
+      <div class="diff-line rem">-        processed = abs(batch)</div>
+      <div class="diff-line rem">-        results.append(processed)</div>
+      <div class="diff-line add">+    for batch in data:             # O(N)</div>
+      <div class="diff-line add">+        for sample in batch:        # O(N²)</div>
+      <div class="diff-line add">+            for elem in sample:     # O(N³) ⚠</div>
+      <div class="diff-line add">+                processed = abs(elem)</div>
+      <div class="diff-line add">+                results.append(processed)</div>
+      <div class="diff-line ctx">     return results</div>
+    </div>
+    <div style="margin-top:16px; padding-top:16px; border-top:1px solid var(--muted); font-size:11px; color:var(--muted);">
+      ENERGY IMPACT: <span style="color:var(--danger); font-family:var(--font-heading);">+34% / +0.021 kgCO₂</span>&nbsp;&nbsp;
+      RISK RATING: <span style="color:var(--danger);">HIGH</span>
+    </div>
+  </div>
+</div>
+
+<!-- TOOLTIP -->
+<div class="tooltip" id="tooltip">
+  <div class="tip-head" id="tipHead"></div>
+  <div id="tipBody"></div>
+</div>
+
+<script>
+// ── Screen switching ──────────────────────────────────
+function switchScreen(id, tab) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('screen-' + id).classList.add('active');
+  tab.classList.add('active');
+}
+
+function initiateLens() {
+  const tabs = document.querySelectorAll('.nav-tab');
+  switchScreen('lens', tabs[1]);
+}
+
+// ── Carbon clock ticking ──────────────────────────────
+let clockVal = 4.892;
+const clockEl = document.getElementById('clockDisplay');
+setInterval(() => {
+  clockVal += 0.00001;
+  clockEl.textContent = clockVal.toFixed(3).padStart(7, '0');
+}, 80);
+
+// ── Live time ─────────────────────────────────────────
+function updateTime() {
+  const now = new Date();
+  document.getElementById('liveTime').textContent =
+    now.toTimeString().split(' ')[0] + ' UTC+5:30';
+}
+setInterval(updateTime, 1000);
+updateTime();
+
+// ── Modal ─────────────────────────────────────────────
+function openDiff() {
+  document.getElementById('diffModal').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('diffModal').classList.remove('open');
+}
+
+// ── Tooltip on heatmap lines ──────────────────────────
+const tooltip = document.getElementById('tooltip');
+const TIPS = {
+  'heat-4': { head: 'O(N²) DETECTED', body: 'Quadratic complexity. Estimated: 0.38 μWh / invocation on 1K batch.' },
+  'heat-5': { head: 'O(N³) — CRITICAL', body: 'Cubic complexity. Eliminates ~200x with vectorization. CO₂: 1.2 μWh/call.' },
+  'heat-3': { head: 'HIGH MEMORY ALLOC', body: 'DataFrame .copy() doubles peak memory. Consider in-place operations.' },
+};
+
+document.addEventListener('mouseover', (e) => {
+  const cell = e.target.closest('.line-code, .thermal-line');
+  if (!cell) { tooltip.style.display = 'none'; return; }
+  for (const cls in TIPS) {
+    if (cell.classList.contains(cls)) {
+      tooltip.style.display = 'block';
+      document.getElementById('tipHead').textContent = TIPS[cls].head;
+      document.getElementById('tipBody').textContent = TIPS[cls].body;
+      return;
+    }
+  }
+  tooltip.style.display = 'none';
+});
+
+document.addEventListener('mousemove', (e) => {
+  tooltip.style.left = (e.clientX + 14) + 'px';
+  tooltip.style.top = (e.clientY - 8) + 'px';
+});
+
+document.addEventListener('mouseout', (e) => {
+  if (!e.target.closest('.line-code, .thermal-line')) tooltip.style.display = 'none';
+});
+
+// Animate breakdown bars on lens screen open
+const lensTab = document.querySelectorAll('.nav-tab')[1];
+lensTab.addEventListener('click', () => {
+  setTimeout(() => {
+    document.querySelectorAll('.bi-bar').forEach(b => {
+      const w = b.style.width;
+      b.style.width = '0%';
+      requestAnimationFrame(() => { b.style.width = w; });
+    });
+  }, 100);
+});
+</script>
+
+</body>
+</html>
