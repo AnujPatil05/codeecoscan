@@ -20,7 +20,7 @@ def load_data(path):
     return df_copy.values.tolist()
 `
 
-export default function InputPanel({ onAnalyze, loading, error }) {
+export default function InputPanel({ onAnalyze, onScanRepo, loading, error }) {
     const [tab, setTab] = useState('paste')  // 'paste' | 'upload' | 'repo'
     const [code, setCode] = useState(SAMPLE_CODE)
     const [repoUrl, setRepoUrl] = useState('')
@@ -29,7 +29,7 @@ export default function InputPanel({ onAnalyze, loading, error }) {
 
     const handleAnalyze = () => {
         if (tab === 'paste' && code.trim()) onAnalyze(code)
-        if (tab === 'repo' && repoUrl.trim()) onAnalyze(repoUrl, 'repo')
+        if (tab === 'repo' && repoUrl.trim() && onScanRepo) onScanRepo(repoUrl.trim())
     }
 
     const handleFile = (file) => {
@@ -136,14 +136,14 @@ export default function InputPanel({ onAnalyze, loading, error }) {
                 {error && <div className="api-error">⚠ {error}</div>}
                 <div className="analysis-status">
                     <div className={`status-dot${loading ? ' loading' : ''}`} />
-                    {loading ? 'ANALYZING…' : 'READY'}
+                    {loading ? (tab === 'repo' ? 'SCANNING REPO…' : 'ANALYZING…') : 'READY'}
                 </div>
                 <button
                     className={`analyze-btn${loading ? ' loading' : ''}`}
                     onClick={handleAnalyze}
                     disabled={!canAnalyze || loading}
                 >
-                    {loading ? '▶ SCANNING…' : '▶ ANALYZE'}
+                    {loading ? (tab === 'repo' ? '▶ SCANNING REPO…' : '▶ ANALYZING…') : '▶ ANALYZE'}
                 </button>
             </div>
         </div>
