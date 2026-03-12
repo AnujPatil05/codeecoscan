@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import EmissionChart from './EmissionChart.jsx'
+import AnimatedMetric from '../shared/AnimatedMetric.jsx'
 import useHistory from '../../hooks/useHistory.js'
 
 export default function EmissionMatrix({ onOpenDiff }) {
@@ -11,7 +12,7 @@ export default function EmissionMatrix({ onOpenDiff }) {
     const totalRuns = entries.length
     const avgScore = totalRuns ? Math.round(entries.reduce((s, e) => s + e.score, 0) / totalRuns) : 0
     const highCount = entries.filter(e => e.risk_level === 'High').length
-    const totalCo2 = entries.reduce((s, e) => s + (e.co2_kg_per_day || 0), 0).toFixed(4)
+    const totalCo2 = entries.reduce((s, e) => s + (e.co2_kg_per_day || 0), 0)
 
     return (
         <>
@@ -20,22 +21,24 @@ export default function EmissionMatrix({ onOpenDiff }) {
                 <div className="ms-sep" />
                 <div className="matrix-stat">
                     <div className="ms-label">TOTAL ANALYSES</div>
-                    <div className="ms-val green">{totalRuns}</div>
+                    <div className="ms-val green"><AnimatedMetric value={totalRuns} /></div>
                 </div>
                 <div className="ms-sep" />
                 <div className="matrix-stat">
                     <div className="ms-label">AVG RISK SCORE</div>
-                    <div className={`ms-val ${avgScore >= 70 ? 'red' : avgScore >= 40 ? 'yellow' : 'green'}`}>{avgScore || '—'}</div>
+                    <div className={`ms-val ${avgScore >= 70 ? 'red' : avgScore >= 40 ? 'yellow' : 'green'}`}>
+                        {entries.length > 0 ? <AnimatedMetric value={avgScore} /> : '—'}
+                    </div>
                 </div>
                 <div className="ms-sep" />
                 <div className="matrix-stat">
                     <div className="ms-label">HIGH RISK RUNS</div>
-                    <div className="ms-val red">{highCount}</div>
+                    <div className="ms-val red"><AnimatedMetric value={highCount} /></div>
                 </div>
                 <div className="ms-sep" />
                 <div className="matrix-stat">
                     <div className="ms-label">CUMULATIVE CO₂</div>
-                    <div className="ms-val red">{totalCo2} kg/day</div>
+                    <div className="ms-val red"><AnimatedMetric value={totalCo2} decimals={4} /> kg/day</div>
                 </div>
                 <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
                     <button className="btn-small" onClick={() => fetchHistory(50)} disabled={loading}>

@@ -171,29 +171,8 @@ body::before {
     font-size: 11px;
     color: var(--muted);
     letter-spacing: 1px;
-}
-
-.nav-status .dot {
-    display: inline-block;
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: var(--primary);
-    box-shadow: var(--glow-primary);
-    margin-right: 6px;
-    animation: pulse 2s infinite;
-}
-
-@keyframes pulse {
-
-    0%,
-    100% {
-        opacity: 1;
-    }
-
-    50% {
-        opacity: 0.3;
-    }
+    display: flex;
+    align-items: center;
 }
 
 /* ═══ SCREENS ═══ */
@@ -1417,6 +1396,81 @@ body::before {
     to {
         transform: scale(1);
     }
+}
+
+@keyframes telemetry-pulse {
+
+    0%,
+    100% {
+        opacity: 0.3;
+        transform: scale(0.95);
+    }
+
+    50% {
+        opacity: 1;
+        transform: scale(1);
+        box-shadow: 0 0 6px currentcolor;
+    }
+}
+
+/* ═══════════════════════════════════════════════════════
+   LIGHT THEME: PAPER TERMINAL / ENGINEERING WORKSTATION
+═══════════════════════════════════════════════════════ */
+
+:root[data-theme="light"] {
+    --primary: #0f9d58;
+    --bg: #f2f1ec;
+    --surface: #e7e6df;
+    --surface2: #d8d7d2;
+    --text: #1f1f1f;
+    --muted: #7a7a7a;
+    --warning: #c77800;
+    --danger: #c7362f;
+    --glow-primary: 0 0 4px rgba(15, 157, 88, 0.2);
+    --glow-danger: 0 0 4px rgba(199, 54, 47, 0.2);
+    --glow-warning: 0 0 4px rgba(199, 120, 0, 0.2);
+}
+
+/* Light Theme Grid: Engineering Graph Paper */
+:root[data-theme="light"] body::before {
+    background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(216, 215, 210, 0.6) 2px, rgba(216, 215, 210, 0.6) 4px),
+        repeating-linear-gradient(90deg, transparent, transparent 20px, rgba(216, 215, 210, 0.4) 20px, rgba(216, 215, 210, 0.4) 21px),
+        repeating-linear-gradient(0deg, transparent, transparent 20px, rgba(216, 215, 210, 0.4) 20px, rgba(216, 215, 210, 0.4) 21px);
+    opacity: 0.8;
+}
+
+/* Light Theme overrides for specific elements */
+:root[data-theme="light"] ::-webkit-scrollbar-track {
+    background: var(--surface);
+}
+
+:root[data-theme="light"] .nav-tab.active {
+    background: rgba(15, 157, 88, 0.08);
+}
+
+:root[data-theme="light"] .nav-tab:hover {
+    background: rgba(15, 157, 88, 0.05);
+}
+
+/* Light Theme Heatmap Overrides (Desaturated but visible) */
+:root[data-theme="light"] .heat-1 {
+    background: rgba(199, 120, 0, 0.1);
+}
+
+:root[data-theme="light"] .heat-2 {
+    background: rgba(199, 120, 0, 0.2);
+}
+
+:root[data-theme="light"] .heat-3 {
+    background: rgba(199, 54, 47, 0.15);
+}
+
+:root[data-theme="light"] .heat-4 {
+    background: rgba(199, 54, 47, 0.25);
+}
+
+:root[data-theme="light"] .heat-5 {
+    background: rgba(199, 54, 47, 0.4);
 }
 
 /* ═══ TOOLTIP ═══ */

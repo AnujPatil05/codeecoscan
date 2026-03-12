@@ -1,4 +1,5 @@
 import { generateReport } from '../../utils/reportExport.js'
+import AnimatedMetric from '../shared/AnimatedMetric.jsx'
 
 export default function LensHeader({ score, refactorScore, delta, file, live }) {
     const scoreNum = score ?? 0
@@ -15,7 +16,9 @@ export default function LensHeader({ score, refactorScore, delta, file, live }) 
             <div className="lens-sep" />
             <div className="lens-metric">
                 <div className="lm-label">ENERGY RISK SCORE</div>
-                <div className={`lm-val ${isEmpty ? '' : scoreCls}`}>{isEmpty ? '—' : `${scoreNum} / 100`}</div>
+                <div className={`lm-val ${isEmpty ? '' : scoreCls}`}>
+                    {isEmpty ? '—' : <><AnimatedMetric value={scoreNum} /> / 100</>}
+                </div>
             </div>
             <div className="lens-sep" />
             <div className="lens-metric">
@@ -26,7 +29,7 @@ export default function LensHeader({ score, refactorScore, delta, file, live }) 
             <div className="lens-metric">
                 <div className="lm-label">ISSUES FOUND</div>
                 <div className="lm-val" style={{ color: 'var(--warning)', textShadow: 'var(--glow-warning)' }}>
-                    {live?.issues?.length ?? '—'}
+                    {live?.issues?.length != null ? <AnimatedMetric value={live.issues.length} /> : '—'}
                 </div>
             </div>
             <div className="lens-actions">

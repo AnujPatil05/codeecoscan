@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { useCarbonClock } from '../../hooks/useClock.js'
 import useRepoSummary from '../../hooks/useRepoSummary.js'
+import TelemetryDot from '../shared/TelemetryDot.jsx'
+import AnimatedMetric from '../shared/AnimatedMetric.jsx'
 
 export default function CommandCenter({ onOpenDiff, onInitiateLens }) {
     const [repoUrl, setRepoUrl] = useState('')
@@ -10,16 +12,16 @@ export default function CommandCenter({ onOpenDiff, onInitiateLens }) {
     const handleScan = () => { if (repoUrl.trim()) fetchSummary(repoUrl.trim()) }
 
     const scanLabel = loading
-        ? (status === 'running' ? `▶ SCANNING… ${elapsed}s` : '▶ QUEUED…')
+        ? (status === 'running' ? <><TelemetryDot /> SCANNING… {elapsed}s</> : '▶ QUEUED…')
         : '▶ SCAN REPO'
 
     const topFiles = data?.top_files || []
     const alerts = data?.alerts || []
     const stats = [
-        { label: 'ENERGY RISK SCORE', val: data?.energy_risk ?? '—', sub: `/ 100 — ${data ? (data.energy_risk >= 70 ? 'HIGH' : data.energy_risk >= 40 ? 'MODERATE' : 'LOW') : 'AWAITING SCAN'}`, cls: data?.energy_risk >= 70 ? 'danger' : data?.energy_risk >= 40 ? 'warn' : '' },
-        { label: 'FILES SCANNED', val: data?.files_scanned ?? '—', sub: 'PYTHON FILES ANALYZED', cls: '' },
-        { label: 'ENERGY / DAY', val: data?.energy_per_day ?? '—', sub: 'WH / DAY (ESTIMATE)', cls: 'warn' },
-        { label: 'CO₂ SAVED', val: data?.co2_saved ?? '—', sub: 'KG SAVED THIS SESSION', cls: 'green' },
+        { label: 'ENERGY RISK SCORE', val: data?.energy_risk ? <AnimatedMetric value={data.energy_risk} /> : '—', sub: `/ 100 — ${data ? (data.energy_risk >= 70 ? 'HIGH' : data.energy_risk >= 40 ? 'MODERATE' : 'LOW') : 'AWAITING SCAN'}`, cls: data?.energy_risk >= 70 ? 'danger' : data?.energy_risk >= 40 ? 'warn' : '' },
+        { label: 'FILES SCANNED', val: data?.files_scanned ? <AnimatedMetric value={data.files_scanned} /> : '—', sub: 'PYTHON FILES ANALYZED', cls: '' },
+        { label: 'ENERGY / DAY', val: data?.energy_per_day ? <AnimatedMetric value={data.energy_per_day} /> : '—', sub: 'WH / DAY (ESTIMATE)', cls: 'warn' },
+        { label: 'CO₂ SAVED', val: data?.co2_saved ? <AnimatedMetric value={data.co2_saved} decimals={2} /> : '—', sub: 'KG SAVED THIS SESSION', cls: 'green' },
     ]
 
     return (
@@ -49,8 +51,8 @@ export default function CommandCenter({ onOpenDiff, onInitiateLens }) {
                         {scanLabel}
                     </button>
                     {loading && (
-                        <div style={{ fontSize: 10, color: 'var(--primary)', marginTop: 6 }}>
-                            ▶ {status?.toUpperCase()} — {elapsed}s elapsed
+                        <div style={{ fontSize: 10, color: 'var(--primary)', marginTop: 6, display: 'flex', alignItems: 'center' }}>
+                            <TelemetryDot /> {status?.toUpperCase()} — {elapsed}s elapsed
                         </div>
                     )}
                     {error && <div style={{ fontSize: 10, color: 'var(--danger)', marginTop: 6, lineHeight: 1.4 }}>⚠ {error}</div>}
@@ -65,8 +67,8 @@ export default function CommandCenter({ onOpenDiff, onInitiateLens }) {
                 {!data && <div style={{ padding: '8px 16px', fontSize: 10, color: 'var(--muted)' }}>No scans yet.</div>}
 
                 <div className="cmd-sidebar-bottom">
-                    <div className="sys-metric">STATUS <span className="sys-metric-val" style={{ color: 'var(--primary)' }}>LIVE</span></div>
-                    <div className="sys-metric">API <span className="sys-metric-val" style={{ color: 'var(--primary)' }}>CONNECTED</span></div>
+                    <div className="sys-metric">STATUS <span className="sys-metric-val" style={{ color: 'var(--primary)' }}><TelemetryDot /> LIVE</span></div>
+                    <div className="sys-metric">API <span className="sys-metric-val" style={{ color: 'var(--primary)' }}><TelemetryDot /> CONNECTED</span></div>
                 </div>
             </div>
 
