@@ -2,6 +2,10 @@
 
 All routes are functional — no stub data.
 Business logic is fully delegated to domain modules.
+
+Repo scanning is asynchronous:
+  POST /analyze_repo → {job_id, status: "queued"} (immediate)
+  GET  /jobs/{job_id} → {status, result, error}   (poll every 2s)
 """
 
 from __future__ import annotations
@@ -9,6 +13,7 @@ from __future__ import annotations
 import asyncio
 import hashlib
 import json
+import uuid
 from datetime import datetime
 from typing import Any
 
@@ -32,6 +37,8 @@ from app.models.schemas import (
     LineTiming,
     ProfilingResponse,
     RepoInput,
+    RepoJobResponse,
+    RepoJobStatus,
     RepoSummaryResponse,
     RiskAssessment,
     TopFile,
@@ -39,6 +46,13 @@ from app.models.schemas import (
 from app.scoring.scoring_engine import EnergyRiskScorer
 
 router = APIRouter(tags=["analysis"])
+
+# ── In-memory job store ───────────────────────────────────────────────
+# Maps job_id → {status, result, error, started_at}
+# status: "queued" | "running" | "done" | "error"
+_JOBS: dict[str, dict[str, Any]] = {}
+_MAX_JOBS = 100   # keep only most recent N jobs
+
 
 
 def _get_feature_extractor(settings: Settings = Depends(get_settings)) -> FeatureExtractor:
@@ -109,58 +123,106 @@ async def analyze_code(
     )
 
 
-# ── POST /analyze_repo ────────────────────────────────────────────────
+# ── POST /analyze_repo — async job ───────────────────────────────────
 
 @router.post(
     "/analyze_repo",
-    response_model=RepoSummaryResponse,
-    summary="Analyze a GitHub repository",
+    response_model=RepoJobResponse,
+    summary="Queue a GitHub repository scan (non-blocking)",
 )
 async def analyze_repo(
     payload: RepoInput,
+    background_tasks: BackgroundTasks,
     settings: Settings = Depends(get_settings),
     db: Session = Depends(get_db),
-) -> RepoSummaryResponse:
-    """Clone and scan a GitHub repository. Returns aggregated energy risk."""
-    try:
-        result = await asyncio.get_event_loop().run_in_executor(
-            None,
-            lambda: scan_repository(
+) -> RepoJobResponse:
+    """Submit a repo scan job.
+
+    Returns immediately with a job_id.
+    Poll GET /jobs/{job_id} every 2s until status == 'done' or 'error'.
+    """
+    # URL guard — scanner also validates, but fail fast here
+    import re
+    if not re.match(r'^https://github\.com/[\w.\-]+/[\w.\-]+(\.git)?/?$', payload.repo_url):
+        raise HTTPException(status_code=400, detail="Only https://github.com/<owner>/<repo> URLs are accepted.")
+
+    job_id = str(uuid.uuid4())[:8]
+    _JOBS[job_id] = {"status": "queued", "result": None, "error": None, "started_at": datetime.utcnow().isoformat()}
+
+    # Evict oldest jobs if over cap
+    if len(_JOBS) > _MAX_JOBS:
+        oldest = sorted(_JOBS.keys())[0]
+        del _JOBS[oldest]
+
+    def _run_scan() -> None:
+        _JOBS[job_id]["status"] = "running"
+        try:
+            result = scan_repository(
                 payload.repo_url,
                 heavy_modules=settings.HEAVY_IMPORT_MODULES,
-                timeout=55,
-            ),
-        )
-    except Exception as exc:
-        raise HTTPException(status_code=422, detail=f"Repository scan failed: {str(exc)[:200]}")
+            )
+            _JOBS[job_id]["status"] = "done"
+            _JOBS[job_id]["result"] = result
+            # Persist to DB
+            try:
+                scan = RepoScan(
+                    repo_url=payload.repo_url,
+                    repo_name=result["repo_name"],
+                    files_analyzed=result["files_analyzed"],
+                    repo_score=result["repo_score"],
+                    top_files_json=json.dumps(result["top_files"]),
+                    alerts_json=json.dumps(result["alerts"]),
+                )
+                db.add(scan)
+                db.commit()
+            except Exception:
+                pass
+        except Exception as exc:
+            _JOBS[job_id]["status"] = "error"
+            _JOBS[job_id]["error"] = str(exc)[:300]
 
-    if "error" in result and not result.get("files_analyzed"):
-        raise HTTPException(status_code=422, detail=result["error"])
-
-    # Persist
-    try:
-        scan = RepoScan(
-            repo_url=payload.repo_url,
-            repo_name=result["repo_name"],
-            files_analyzed=result["files_analyzed"],
-            repo_score=result["repo_score"],
-            top_files_json=json.dumps(result["top_files"]),
-            alerts_json=json.dumps(result["alerts"]),
-        )
-        db.add(scan)
-        db.commit()
-    except Exception:
-        pass
-
-    return RepoSummaryResponse(
-        repo_name=result["repo_name"],
-        energy_risk=result["repo_score"],
-        files_scanned=result["files_analyzed"],
-        energy_per_day=round(result["repo_score"] * 0.48, 2),
-        co2_saved=0.0,
-        top_files=[TopFile(file=f["file"], score=f["score"]) for f in result["top_files"]],
-        alerts=[{"file": a["file"], "issue": a["issue"]} for a in result["alerts"]],
+    background_tasks.add_task(_run_scan)
+    return RepoJobResponse(
+        job_id=job_id,
+        status="queued",
+        message=f"Repo scan queued. Poll /jobs/{job_id} every 2s for results.",
     )
+
+
+@router.get(
+    "/jobs/{job_id}",
+    response_model=RepoJobStatus,
+    summary="Poll the status of a repo scan job",
+)
+async def get_job_status(job_id: str) -> RepoJobStatus:
+    """Poll a background repo-scan job."""
+    job = _JOBS.get(job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail=f"Job {job_id!r} not found.")
+    started = datetime.fromisoformat(job["started_at"])
+    elapsed = (datetime.utcnow() - started).total_seconds()
+
+    result_out = None
+    if job["status"] == "done" and job["result"]:
+        r = job["result"]
+        result_out = {
+            "repo_name":     r.get("repo_name"),
+            "energy_risk":   r.get("repo_score"),
+            "files_scanned": r.get("files_analyzed"),
+            "energy_per_day": round(r.get("repo_score", 0) * 0.48, 2),
+            "co2_saved":     0.0,
+            "top_files":     r.get("top_files", []),
+            "alerts":        r.get("alerts", []),
+        }
+
+    return RepoJobStatus(
+        job_id=job_id,
+        status=job["status"],
+        result=result_out,
+        error=job.get("error"),
+        elapsed_s=round(elapsed, 1),
+    )
+
 
 
 # ── POST /profile ─────────────────────────────────────────────────────

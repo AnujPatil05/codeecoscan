@@ -114,6 +114,22 @@ class CommitEntry(BaseModel):
     risk: str
 
 
+class RepoJobResponse(BaseModel):
+    """Immediate response from POST /analyze_repo — contains job_id to poll."""
+    job_id: str
+    status: str   # 'queued'
+    message: str  # human-readable
+
+
+class RepoJobStatus(BaseModel):
+    """Polled from GET /jobs/{job_id}."""
+    job_id: str
+    status: str          # 'queued' | 'running' | 'done' | 'error'
+    result: dict | None = None
+    error: str | None = None
+    elapsed_s: float = 0.0
+
+
 # ── Error ──────────────────────────────────────────────────────────
 
 class ErrorResponse(BaseModel):

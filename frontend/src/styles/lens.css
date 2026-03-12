@@ -338,3 +338,62 @@
     background: var(--warning);
     animation: pulse 0.5s infinite;
 }
+
+/* ── Typography readability improvements ──────────────────────────
+   Subtle font-size bumps on small labels to improve legibility.
+   All within the existing design language — no new fonts or colors.
+───────────────────────────────────────────────────────────────── */
+
+/* Panel header labels (were 10px) */
+.panel-header,
+.log-header,
+.mini-chart-label,
+.cmd-sidebar-label,
+.cmd-label {
+    font-size: 11px;
+}
+
+/* Small metric sub-labels (were 10px) */
+.stat-sub,
+.stat-label,
+.sys-metric,
+.lm-label {
+    font-size: 11px;
+    letter-spacing: 1px;
+}
+
+/* Code log meta text (were 10px) */
+.log-sha,
+.log-author,
+.file-meta,
+.alert-tag,
+.log-ts {
+    font-size: 11px;
+}
+
+/* Suggestion title (was 9px) */
+.sug-title {
+    font-size: 10px;
+}
+
+/* Input tab labels (were 9px) */
+.input-tab {
+    font-size: 10px;
+}
+
+/* Line numbers in code tables */
+.line-num {
+    font-size: 11px;
+    min-width: 32px;
+}
+
+/* Tooltip text */
+.tooltip {
+    font-size: 11px;
+    line-height: 1.5;
+}
+
+/* Status pill */
+.analysis-status {
+    font-size: 11px;
+}

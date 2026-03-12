@@ -1,15 +1,17 @@
-import { useState, useRef } from 'react'
+import { useState } from 'react'
 import { useCarbonClock } from '../../hooks/useClock.js'
 import useRepoSummary from '../../hooks/useRepoSummary.js'
 
 export default function CommandCenter({ onOpenDiff, onInitiateLens }) {
     const [repoUrl, setRepoUrl] = useState('')
-    const { data, loading, error, fetchSummary } = useRepoSummary()
+    const { data, loading, status, elapsed, error, fetchSummary } = useRepoSummary()
     const clockDisplay = useCarbonClock(data?.energy_risk ? data.energy_risk * 0.049 : 4.892)
 
-    const handleScan = () => {
-        if (repoUrl.trim()) fetchSummary(repoUrl.trim())
-    }
+    const handleScan = () => { if (repoUrl.trim()) fetchSummary(repoUrl.trim()) }
+
+    const scanLabel = loading
+        ? (status === 'running' ? `▶ SCANNING… ${elapsed}s` : '▶ QUEUED…')
+        : '▶ SCAN REPO'
 
     const topFiles = data?.top_files || []
     const alerts = data?.alerts || []
@@ -31,9 +33,9 @@ export default function CommandCenter({ onOpenDiff, onInitiateLens }) {
                         style={{
                             width: '100%', background: 'var(--bg)', border: '1px solid var(--muted)',
                             color: 'var(--text)', fontFamily: 'var(--font-body)', fontSize: 11,
-                            padding: '8px', outline: 'none', marginBottom: 8,
+                            padding: '8px', outline: 'none', marginBottom: 8, boxSizing: 'border-box',
                         }}
-                        placeholder="github.com/user/repo"
+                        placeholder="https://github.com/user/repo"
                         value={repoUrl}
                         onChange={e => setRepoUrl(e.target.value)}
                         onKeyDown={e => e.key === 'Enter' && handleScan()}
@@ -44,9 +46,14 @@ export default function CommandCenter({ onOpenDiff, onInitiateLens }) {
                         onClick={handleScan}
                         disabled={loading || !repoUrl.trim()}
                     >
-                        {loading ? '▶ SCANNING…' : '▶ SCAN REPO'}
+                        {scanLabel}
                     </button>
-                    {error && <div style={{ fontSize: 10, color: 'var(--danger)', marginTop: 6 }}>⚠ {error}</div>}
+                    {loading && (
+                        <div style={{ fontSize: 10, color: 'var(--primary)', marginTop: 6 }}>
+                            ▶ {status?.toUpperCase()} — {elapsed}s elapsed
+                        </div>
+                    )}
+                    {error && <div style={{ fontSize: 10, color: 'var(--danger)', marginTop: 6, lineHeight: 1.4 }}>⚠ {error}</div>}
                 </div>
 
                 <div className="cmd-sidebar-label" style={{ marginTop: 8 }}>RECENT</div>
@@ -66,7 +73,6 @@ export default function CommandCenter({ onOpenDiff, onInitiateLens }) {
             {/* Main area */}
             <div className="cmd-main">
                 <div className="cmd-main-top">
-                    {/* Carbon clock */}
                     <div className="carbon-clock-wrap">
                         <div className="cmd-label">CARBON DEBT — {data?.repo_name || 'SCAN A REPOSITORY'}</div>
                         <div className="carbon-clock">{clockDisplay}</div>
@@ -76,7 +82,6 @@ export default function CommandCenter({ onOpenDiff, onInitiateLens }) {
                         </button>
                     </div>
 
-                    {/* Alerts */}
                     <div className="cmd-alert-box">
                         <div className="alert-header">
                             <div className="alert-blink" />
@@ -89,13 +94,12 @@ export default function CommandCenter({ onOpenDiff, onInitiateLens }) {
                             </div>
                         )) : (
                             <div className="alert-item">
-                                <span>Scan a repo to see energy alerts.</span>
+                                <span style={{ color: 'var(--muted)' }}>{loading ? scanLabel : 'Scan a repo to see energy alerts.'}</span>
                             </div>
                         )}
                     </div>
                 </div>
 
-                {/* Stats row */}
                 <div className="cmd-stats">
                     {stats.map((s, i) => (
                         <div key={i} className="stat-cell">
@@ -109,11 +113,10 @@ export default function CommandCenter({ onOpenDiff, onInitiateLens }) {
                     ))}
                 </div>
 
-                {/* History / log area */}
                 <div className="cmd-log-area">
                     <div className="log-header">TOP ENERGY OFFENDERS — CLICK TO ANALYZE IN LENS</div>
                     {topFiles.length ? topFiles.map((f, i) => (
-                        <div key={i} className="log-entry" onClick={onInitiateLens}>
+                        <div key={i} className="log-entry" onClick={onInitiateLens} style={{ cursor: 'pointer' }}>
                             <span className="log-ts">#{i + 1}</span>
                             <span className="log-sha">{f.score}/100</span>
                             <span className="log-msg">{f.file}</span>
@@ -124,7 +127,7 @@ export default function CommandCenter({ onOpenDiff, onInitiateLens }) {
                         </div>
                     )) : (
                         <div style={{ padding: '24px', fontSize: 11, color: 'var(--muted)', textAlign: 'center' }}>
-                            {loading ? '▶ Scanning repository…' : 'Scan a GitHub repository to see results.'}
+                            {loading ? `▶ ${status?.toUpperCase()} — analyzing ${elapsed}s…` : 'Enter a GitHub repo URL and click SCAN REPO.'}
                         </div>
                     )}
                 </div>
@@ -151,10 +154,11 @@ export default function CommandCenter({ onOpenDiff, onInitiateLens }) {
                         )
                     })}
                     {!topFiles.length && (
-                        <div style={{ padding: 16, fontSize: 11, color: 'var(--muted)' }}>Scan a repo to see files.</div>
+                        <div style={{ padding: 16, fontSize: 11, color: 'var(--muted)' }}>
+                            {loading ? `${status?.toUpperCase()}…` : 'Scan a repo to see files.'}
+                        </div>
                     )}
                 </div>
-                {/* 7-day sparkline placeholder */}
                 <div className="mini-chart">
                     <div className="mini-chart-label">ENERGY TREND</div>
                     <svg className="sparkline" viewBox="0 0 220 60" preserveAspectRatio="none">

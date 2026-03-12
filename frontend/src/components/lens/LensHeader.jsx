@@ -1,9 +1,9 @@
-export default function LensHeader({ score, refactorScore, delta, co2Saved, file, live }) {
+import { generateReport } from '../../utils/reportExport.js'
+
+export default function LensHeader({ score, refactorScore, delta, file, live }) {
     const scoreNum = score ?? 0
-    const refactorNum = refactorScore ?? 0
     const deltaVal = delta != null ? `Δ ${delta > 0 ? '+' : ''}${delta}%` : '—'
     const scoreCls = scoreNum >= 70 ? 'red' : scoreNum >= 40 ? 'yellow' : 'green'
-    const refactorCls = refactorNum < 40 ? 'green' : refactorNum < 70 ? 'yellow' : 'red'
     const isEmpty = score == null
 
     return (
@@ -20,20 +20,9 @@ export default function LensHeader({ score, refactorScore, delta, co2Saved, file
             <div className="lens-sep" />
             <div className="lens-metric">
                 <div className="lm-label">RISK LEVEL</div>
-                <div className={`lm-val ${scoreCls}`}>{live?.risk_level || (isEmpty ? '—' : 'UNKNOWN')}</div>
+                <div className={`lm-val ${scoreCls}`}>{live?.risk_assessment?.risk_level || (isEmpty ? '—' : 'UNKNOWN')}</div>
             </div>
             <div className="lens-sep" />
-            {delta != null && (
-                <>
-                    <div className="delta-hud">
-                        <div>
-                            <div className="delta-label">ENERGY DELTA</div>
-                            <div className="delta-val">{deltaVal}</div>
-                        </div>
-                    </div>
-                    <div className="lens-sep" />
-                </>
-            )}
             <div className="lens-metric">
                 <div className="lm-label">ISSUES FOUND</div>
                 <div className="lm-val" style={{ color: 'var(--warning)', textShadow: 'var(--glow-warning)' }}>
@@ -41,6 +30,14 @@ export default function LensHeader({ score, refactorScore, delta, co2Saved, file
                 </div>
             </div>
             <div className="lens-actions">
+                <button
+                    className="btn-small"
+                    onClick={() => generateReport(live)}
+                    disabled={!live}
+                    title="Download HTML energy audit report"
+                >
+                    REPORT
+                </button>
                 <button
                     className="btn-small"
                     onClick={() => {
@@ -53,7 +50,7 @@ export default function LensHeader({ score, refactorScore, delta, co2Saved, file
                     }}
                     disabled={!live}
                 >
-                    EXPORT JSON
+                    JSON
                 </button>
             </div>
         </div>
