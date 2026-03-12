@@ -16,10 +16,9 @@ import {
 
 const DEBOUNCE_MS = 800
 
-export default function LensWorkspace() {
+export default function LensWorkspace({ sharedCode, setSharedCode }) {
     // ── Code analysis state ────────────────────────────────────────
     const [result, setResult] = useState(null)
-    const [code, setCode] = useState('')
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState(null)
 
@@ -43,7 +42,7 @@ export default function LensWorkspace() {
 
     // ── Paste / file analyze ───────────────────────────────────────
     const analyze = useCallback(async (inputCode) => {
-        setCode(inputCode)
+        setSharedCode(inputCode)
         setError(null)
 
         if (cacheRef.current[inputCode]) {
@@ -70,14 +69,14 @@ export default function LensWorkspace() {
                 setLoading(false)
             }
         }, DEBOUNCE_MS)
-    }, [])
+    }, [setSharedCode])
 
     // ── Repo scan handler (called from InputPanel GITHUB REPO tab) ─
     const handleScanRepo = useCallback((repoUrl) => {
         setResult(null)   // clear existing code analysis
-        setCode('')
+        setSharedCode('')
         fetchSummary(repoUrl)
-    }, [fetchSummary])
+    }, [fetchSummary, setSharedCode])
 
     // ── Derive display data ────────────────────────────────────────
     const assessment = result?.risk_assessment
@@ -85,7 +84,7 @@ export default function LensWorkspace() {
     const issues = result?.issues || []
     const heatMap = heatMapFromIssues(issues)
     const tipMap = tooltipMapFromIssues(issues)
-    const codeLines = codeLinesToDisplay(code, heatMap, tipMap)
+    const codeLines = codeLinesToDisplay(sharedCode, heatMap, tipMap)
     const breakdown = result ? breakdownFromAPI(assessment?.risk_breakdown, features) : []
     const suggestions = result ? generateSuggestions(features, issues) : []
 
@@ -134,11 +133,13 @@ export default function LensWorkspace() {
         <>
             <LensHeader
                 score={isRepoMode ? repoScore : scoreNum}
-                file={isRepoMode ? repoData?.repo_name : (code ? 'input.py' : null)}
+                file={isRepoMode ? repoData?.repo_name : (sharedCode ? 'input.py' : null)}
                 live={isRepoMode ? null : result}
             />
             <div className="lens-body">
                 <InputPanel
+                    sharedCode={sharedCode}
+                    setSharedCode={setSharedCode}
                     onAnalyze={analyze}
                     onScanRepo={handleScanRepo}
                     loading={panelLoading}

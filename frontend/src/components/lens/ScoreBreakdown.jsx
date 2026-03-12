@@ -18,7 +18,7 @@ export default function ScoreBreakdown({ items }) {
             <div className="panel-header">SCORE BREAKDOWN</div>
             <div className="breakdown-list">
                 {items.map((b, i) => (
-                    <div key={b.name} className="breakdown-item">
+                    <div key={`${b.name}-${i}`} className="breakdown-item">
                         <div className="bi-top">
                             <div className="bi-name">{b.name}</div>
                             <div className={`bi-score ${b.cls}`}>{b.score}</div>

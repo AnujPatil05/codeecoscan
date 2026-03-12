@@ -163,7 +163,6 @@ async def analyze_repo(
             )
             _JOBS[job_id]["status"] = "done"
             _JOBS[job_id]["result"] = result
-            # Persist to DB
             try:
                 scan = RepoScan(
                     repo_url=payload.repo_url,
@@ -174,9 +173,25 @@ async def analyze_repo(
                     alerts_json=json.dumps(result["alerts"]),
                 )
                 db.add(scan)
+                
+                # Also cross-save to AnalysisRun so EmissionMatrix sees it
+                risk_level = "Complete"
+                if result["repo_score"] >= 70: risk_level = "High"
+                elif result["repo_score"] >= 40: risk_level = "Moderate"
+                else: risk_level = "Low"
+
+                db.add(AnalysisRun(
+                    source="GitHub Repo",
+                    filename=result["repo_name"],
+                    score=result["repo_score"],
+                    risk_level=risk_level,
+                    issue_count=len(result["alerts"]),
+                    co2_kg_per_day=round(result["repo_score"] * 0.48 * 0.0003, 4), # approximate mapping
+                ))
+                
                 db.commit()
             except Exception:
-                pass
+                db.rollback()
         except Exception as exc:
             _JOBS[job_id]["status"] = "error"
             _JOBS[job_id]["error"] = str(exc)[:300]

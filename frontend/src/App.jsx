@@ -13,6 +13,7 @@ const SCREENS = ['command', 'lens', 'thermal', 'matrix']
 export default function App() {
     const [screen, setScreen] = useState('command')
     const [modalOpen, setModalOpen] = useState(false)
+    const [sharedCode, setSharedCode] = useState('') // Cross-screen code state
 
     const openDiff = useCallback(() => setModalOpen(true), [])
     const closeDiff = useCallback(() => setModalOpen(false), [])
@@ -46,15 +47,15 @@ export default function App() {
             </div>
 
             <div id="screen-lens" className={`screen${screen === 'lens' ? ' active' : ''}`}>
-                {screen === 'lens' && <LensWorkspace />}
+                <LensWorkspace sharedCode={sharedCode} setSharedCode={setSharedCode} />
             </div>
 
             <div id="screen-thermal" className={`screen${screen === 'thermal' ? ' active' : ''}`}>
-                {screen === 'thermal' && <ThermalHeatmap />}
+                <ThermalHeatmap sharedCode={sharedCode} setSharedCode={setSharedCode} />
             </div>
 
             <div id="screen-matrix" className={`screen${screen === 'matrix' ? ' active' : ''}`}>
-                {screen === 'matrix' && <EmissionMatrix onOpenDiff={openDiff} />}
+                <EmissionMatrix onOpenDiff={openDiff} />
             </div>
 
             <StatusBar />

@@ -31,8 +31,9 @@ def load_data(path):
     return df_copy.values.tolist()
 `
 
-export default function ThermalHeatmap() {
-    const [code, setCode] = useState(SAMPLE_CODE)
+export default function ThermalHeatmap({ sharedCode, setSharedCode }) {
+    // Current fallback if sharedCode is empty
+    const currentCode = sharedCode || ''
     const { data, loading, error, profile } = useProfiling()
 
     const lineTimes = data?.line_times || []
@@ -43,7 +44,7 @@ export default function ThermalHeatmap() {
     const lineMap = {}
     for (const lt of lineTimes) lineMap[lt.line] = lt
 
-    const codeLines = code.split('\n')
+    const codeLines = currentCode.split('\n')
 
     return (
         <>
@@ -58,7 +59,7 @@ export default function ThermalHeatmap() {
                 <button
                     className="analyze-btn"
                     style={{ marginLeft: 16, padding: '6px 16px', fontSize: 10, width: 'auto' }}
-                    onClick={() => profile(code)}
+                    onClick={() => profile(currentCode)}
                     disabled={loading}
                 >
                     {loading ? '▶ PROFILING…' : '▶ PROFILE'}
@@ -77,8 +78,8 @@ export default function ThermalHeatmap() {
                             <textarea
                                 className="code-textarea"
                                 style={{ flex: 1 }}
-                                value={code}
-                                onChange={e => setCode(e.target.value)}
+                                value={currentCode}
+                                onChange={e => setSharedCode(e.target.value)}
                                 spellCheck={false}
                             />
                             {error && <div style={{ padding: 8, fontSize: 10, color: 'var(--danger)' }}>⚠ {error}</div>}
@@ -104,7 +105,7 @@ export default function ThermalHeatmap() {
                                 </tbody>
                             </table>
                             <div style={{ padding: 8 }}>
-                                <button className="btn-small" onClick={() => profile(code)}>RE-PROFILE</button>
+                                <button className="btn-small" onClick={() => profile(currentCode)}>RE-PROFILE</button>
                                 <span style={{ marginLeft: 16, fontSize: 10, color: 'var(--muted)' }}>
                                     {lineTimes.length} lines profiled
                                 </span>

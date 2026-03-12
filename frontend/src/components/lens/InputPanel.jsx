@@ -20,15 +20,16 @@ def load_data(path):
     return df_copy.values.tolist()
 `
 
-export default function InputPanel({ onAnalyze, onScanRepo, loading, error }) {
+export default function InputPanel({ sharedCode, setSharedCode, onAnalyze, onScanRepo, loading, error }) {
     const [tab, setTab] = useState('paste')  // 'paste' | 'upload' | 'repo'
-    const [code, setCode] = useState(SAMPLE_CODE)
+    // Fallback if sharedCode is somehow empty on first load, though we'll handle this in App or Workspace
+    const currentCode = sharedCode || ''
     const [repoUrl, setRepoUrl] = useState('')
     const [dragOver, setDragOver] = useState(false)
     const fileRef = useRef(null)
 
     const handleAnalyze = () => {
-        if (tab === 'paste' && code.trim()) onAnalyze(code)
+        if (tab === 'paste' && currentCode.trim()) onAnalyze(currentCode)
         if (tab === 'repo' && repoUrl.trim() && onScanRepo) onScanRepo(repoUrl.trim())
     }
 
@@ -37,7 +38,7 @@ export default function InputPanel({ onAnalyze, onScanRepo, loading, error }) {
         const reader = new FileReader()
         reader.onload = (e) => {
             const text = e.target.result
-            setCode(text)
+            setSharedCode(text)
             setTab('paste')
             onAnalyze(text)
         }
@@ -51,8 +52,8 @@ export default function InputPanel({ onAnalyze, onScanRepo, loading, error }) {
         if (file && file.name.endsWith('.py')) handleFile(file)
     }
 
-    const activeCode = tab === 'paste' ? code : ''
-    const canAnalyze = (tab === 'paste' && code.trim()) || (tab === 'repo' && repoUrl.trim())
+    const activeCode = tab === 'paste' ? currentCode : ''
+    const canAnalyze = (tab === 'paste' && currentCode.trim()) || (tab === 'repo' && repoUrl.trim())
 
     return (
         <div className="input-panel">
@@ -78,8 +79,8 @@ export default function InputPanel({ onAnalyze, onScanRepo, loading, error }) {
                 {tab === 'paste' && (
                     <textarea
                         className="code-textarea"
-                        value={code}
-                        onChange={e => setCode(e.target.value)}
+                        value={currentCode}
+                        onChange={e => setSharedCode(e.target.value)}
                         placeholder="# Paste Python code here…"
                         spellCheck={false}
                     />
@@ -131,7 +132,7 @@ export default function InputPanel({ onAnalyze, onScanRepo, loading, error }) {
             {/* Footer */}
             <div className="input-footer">
                 {tab === 'paste' && (
-                    <div className="char-count">{code.length} chars · {code.split('\n').length} lines</div>
+                    <div className="char-count">{currentCode.length} chars · {currentCode.split('\n').length} lines</div>
                 )}
                 {error && <div className="api-error">⚠ {error}</div>}
                 <div className="analysis-status">
