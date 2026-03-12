@@ -152,9 +152,27 @@
 
     .matrix-header {
         flex-wrap: wrap;
+        /* allow the header items to flow */
         height: auto !important;
-        padding: 12px;
-        gap: 12px;
+        padding: 16px;
+        gap: 16px;
+        justify-content: space-between;
+    }
+
+    /* Un-squish the top matrix stats */
+    .matrix-stat {
+        flex: 1 1 40%;
+        /* let stats take up roughly half the row */
+        margin-bottom: 8px;
+    }
+
+    .ms-label {
+        font-size: 11px !important;
+        margin-bottom: 4px;
+    }
+
+    .ms-val {
+        font-size: 18px !important;
     }
 
     .ms-sep {
@@ -172,5 +190,104 @@
         width: 100%;
         justify-content: center;
         margin-top: 12px;
+        padding: 16px;
+        /* bigger touch target */
+        font-size: 13px;
+        /* bigger font */
+    }
+
+    /* ── Mobile Typography & Spacing Overrides ── */
+    /* Bump up all small 9px/10px text so no squinting is needed */
+
+    .panel-header,
+    .log-header,
+    .cmd-sidebar-label,
+    .cmd-label {
+        font-size: 12px !important;
+        padding: 16px !important;
+    }
+
+    .stat-label,
+    .stat-sub,
+    .sys-metric {
+        font-size: 12px !important;
+    }
+
+    .log-entry {
+        font-size: 12px !important;
+        padding: 14px 16px !important;
+        gap: 8px;
+        /* give cells more breathing room */
+        grid-template-columns: 60px 80px 1fr 80px 80px;
+        /* adjust for mobile */
+        overflow-x: auto;
+        /* allow horizontal scroll if still too tight */
+    }
+
+    .log-msg,
+    .log-author,
+    .log-sha,
+    .log-ts {
+        font-size: 12px !important;
+    }
+
+    .file-item {
+        padding: 16px !important;
+    }
+
+    .file-name {
+        font-size: 13px !important;
+    }
+
+    .nav-tab {
+        font-size: 12px !important;
+        padding: 0 16px !important;
+    }
+
+    .input-tab {
+        font-size: 11px !important;
+        padding: 16px 0 !important;
+    }
+
+    /* Emission Matrix Table readability */
+    .data-table th,
+    .data-table td {
+        padding: 12px 16px !important;
+        font-size: 12px !important;
+        white-space: nowrap;
+        /* prevent ugly column wrapping on mobile */
+    }
+
+    .td-ts,
+    .td-risk {
+        font-size: 11px !important;
+    }
+
+    /* Thermal heatmap list */
+    .fn-item {
+        padding: 14px 16px !important;
+    }
+
+    .fn-name {
+        font-size: 12px !important;
+    }
+
+    /* Score Breakdown list */
+    .breakdown-item {
+        padding: 14px 16px !important;
+    }
+
+    .bi-name {
+        font-size: 12px !important;
+    }
+
+    .bi-desc {
+        font-size: 11px !important;
+        margin-top: 8px !important;
+    }
+
+    /* Base body font size slight bump */
+    body {
+        font-size: 15px !important;
     }
 }
