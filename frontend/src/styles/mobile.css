@@ -38,8 +38,14 @@
     }
 
     .nav-right {
+        display: flex !important;
+        align-items: center;
+        /* we need this to show the theme toggle */
+    }
+
+    .nav-status {
         display: none !important;
-        /* Hide "LIVE API CONNECTED" to save horizontal space */
+        /* Hide "LIVE API CONNECTED" to save horizontal space but keep toggle */
     }
 
     .nav-tab {
@@ -47,7 +53,7 @@
     }
 
     /* Hide Status Bar on mobile */
-    #status-bar {
+    #statusbar {
         display: none !important;
     }
 

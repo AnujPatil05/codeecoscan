@@ -58,14 +58,9 @@ body {
     background: var(--primary);
 }
 
-/* ═══ CRT SCANLINES ═══ */
+/* ═══ CRT SCANLINES (REMOVED: User requested clean look) ═══ */
 body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0, 0, 0, 0.08) 2px, rgba(0, 0, 0, 0.08) 4px);
-    pointer-events: none;
-    z-index: 9999;
+    display: none;
 }
 
 /* ═══ NAV ═══ */
@@ -1429,14 +1424,6 @@ body::before {
     --glow-primary: 0 0 4px rgba(15, 157, 88, 0.2);
     --glow-danger: 0 0 4px rgba(199, 54, 47, 0.2);
     --glow-warning: 0 0 4px rgba(199, 120, 0, 0.2);
-}
-
-/* Light Theme Grid: Engineering Graph Paper */
-:root[data-theme="light"] body::before {
-    background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(216, 215, 210, 0.6) 2px, rgba(216, 215, 210, 0.6) 4px),
-        repeating-linear-gradient(90deg, transparent, transparent 20px, rgba(216, 215, 210, 0.4) 20px, rgba(216, 215, 210, 0.4) 21px),
-        repeating-linear-gradient(0deg, transparent, transparent 20px, rgba(216, 215, 210, 0.4) 20px, rgba(216, 215, 210, 0.4) 21px);
-    opacity: 0.8;
 }
 
 /* Light Theme overrides for specific elements */

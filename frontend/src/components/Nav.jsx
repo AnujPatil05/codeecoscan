@@ -9,12 +9,16 @@ const TABS = [
 ]
 
 export default function Nav({ activeScreen, onSwitch }) {
-    const [theme, setTheme] = useState('dark')
+    const [theme, setTheme] = useState('light')
 
     useEffect(() => {
-        const saved = localStorage.getItem('theme') || 'dark'
+        const saved = localStorage.getItem('theme') || 'light'
         setTheme(saved)
-        if (saved === 'light') document.documentElement.setAttribute('data-theme', 'light')
+        if (saved === 'light') {
+            document.documentElement.setAttribute('data-theme', 'light')
+        } else {
+            document.documentElement.removeAttribute('data-theme')
+        }
     }, [])
 
     const toggleTheme = () => {
@@ -43,7 +47,7 @@ export default function Nav({ activeScreen, onSwitch }) {
             </div>
             <div className="nav-right">
                 <div style={{ marginRight: 16, cursor: 'pointer', fontSize: 11, color: 'var(--muted)', display: 'flex', alignItems: 'center' }} onClick={toggleTheme}>
-                    {theme === 'dark' ? '☼ LIGHT' : '☾ DARK'}
+                    {theme === 'light' ? '☾ DARK' : '☼ LIGHT'}
                 </div>
                 <div className="nav-status">
                     <TelemetryDot /> CONNECTED
