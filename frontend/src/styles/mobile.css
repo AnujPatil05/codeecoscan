@@ -1,0 +1,176 @@
+/* ═══════════════════════════════════════════════════════
+   Mobile Responsiveness Overrides
+   Forces vertical stacking on narrow viewports
+═══════════════════════════════════════════════════════ */
+
+@media (max-width: 800px) {
+
+    /* Main Screen Layouts */
+    .screen {
+        flex-direction: column !important;
+        overflow-y: auto !important;
+        inset: 48px 0 0 0 !important;
+        /* expand height, cover status bar */
+        display: none;
+        /* keep default none */
+    }
+
+    .screen.active {
+        display: flex !important;
+    }
+
+    /* Nav Bar */
+    #nav {
+        padding: 0 12px;
+        overflow-x: auto;
+        justify-content: flex-start;
+        gap: 16px;
+    }
+
+    .nav-logo {
+        margin-right: 16px;
+        font-size: 14px;
+        flex-shrink: 0;
+    }
+
+    .nav-tabs {
+        flex-shrink: 0;
+    }
+
+    .nav-right {
+        display: none !important;
+        /* Hide "LIVE API CONNECTED" to save horizontal space */
+    }
+
+    .nav-tab {
+        padding: 0 12px;
+    }
+
+    /* Hide Status Bar on mobile */
+    #status-bar {
+        display: none !important;
+    }
+
+    /* Command Center */
+    #screen-command {
+        flex-direction: column !important;
+    }
+
+    .cmd-sidebar,
+    .cmd-right {
+        width: 100% !important;
+        min-width: 100% !important;
+        border-right: none !important;
+        border-left: none !important;
+        border-bottom: 1px solid var(--muted);
+        min-height: auto;
+    }
+
+    .cmd-main {
+        overflow: visible !important;
+    }
+
+    .cmd-stats {
+        grid-template-columns: 1fr 1fr;
+        /* 2x2 grid */
+    }
+
+    .cmd-main-top {
+        flex-direction: column;
+        align-items: center;
+        gap: 24px;
+    }
+
+    .cmd-log-area {
+        overflow: visible !important;
+    }
+
+    /* Lens Workspace */
+    .lens-body {
+        flex-direction: column !important;
+        overflow-y: auto !important;
+    }
+
+    .input-panel,
+    .lens-breakdown {
+        width: 100% !important;
+        min-width: 100% !important;
+        border-right: none !important;
+        border-left: none !important;
+    }
+
+    .input-panel {
+        border-bottom: 1px solid var(--muted);
+        flex-shrink: 0;
+    }
+
+    .lens-header {
+        flex-wrap: wrap;
+        height: auto !important;
+        padding: 12px;
+        gap: 12px;
+    }
+
+    .lens-sep {
+        display: none;
+    }
+
+    .lens-panel {
+        min-height: 400px;
+        /* give code area some space before breakdown */
+    }
+
+    /* Thermal Heatmap */
+    .thermal-body {
+        flex-direction: column !important;
+        overflow-y: auto !important;
+    }
+
+    .thermal-sidebar {
+        width: 100% !important;
+        min-width: 100% !important;
+        border-left: none !important;
+        border-top: 1px solid var(--muted);
+    }
+
+    .thermal-header {
+        flex-wrap: wrap;
+        height: auto !important;
+        padding: 12px;
+        gap: 12px;
+    }
+
+    .thermal-code-area {
+        min-height: 400px;
+    }
+
+    /* Emission Matrix */
+    .matrix-body {
+        flex-direction: column !important;
+        overflow-y: auto !important;
+    }
+
+    .matrix-header {
+        flex-wrap: wrap;
+        height: auto !important;
+        padding: 12px;
+        gap: 12px;
+    }
+
+    .ms-sep {
+        display: none;
+    }
+
+    .table-area {
+        overflow-x: auto;
+        /* allow table to scroll horizontally if needed */
+    }
+
+    /* Button Touch Targets */
+    .cmd-scan-btn,
+    .analyze-btn {
+        width: 100%;
+        justify-content: center;
+        margin-top: 12px;
+    }
+}
