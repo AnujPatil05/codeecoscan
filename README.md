@@ -6,6 +6,7 @@
 [![Live API](https://img.shields.io/badge/API-live%20demo-brightgreen)](https://codeecoscan.onrender.com/docs)
 
 **Static energy-risk analysis for Python code.**
+https://codeecoscan.vercel.app/
 
 CodeEcoScan parses Python source files using the `ast` module, extracts structural patterns linked to computational cost, scores them for energy risk, and optionally estimates carbon emissions for different hardware scenarios — all without executing a single line of your code.
 
